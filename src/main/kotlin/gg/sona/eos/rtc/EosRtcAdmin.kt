@@ -1,0 +1,325 @@
+/*
+ * Copyright 2024 sona
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package gg.sona.eos.rtc
+
+import gg.sona.eos.internal.setInt8
+import gg.sona.eos.internal.setInt16
+import gg.sona.eos.internal.setFloat
+import gg.sona.eos.internal.setDouble
+import gg.sona.eos.internal.setBool
+import gg.sona.eos.internal.getInt8
+import gg.sona.eos.internal.getInt16
+import gg.sona.eos.internal.getInt32
+import gg.sona.eos.internal.getInt64
+import gg.sona.eos.internal.getFloat
+import gg.sona.eos.internal.getDouble
+import gg.sona.eos.internal.getBool
+
+import gg.sona.eos.EosPlatform
+import gg.sona.eos.EosResult
+import gg.sona.eos.common.ProductUserId
+import gg.sona.eos.internal.CallbackStubs
+import gg.sona.eos.internal.EosCallback
+import gg.sona.eos.internal.Native
+import gg.sona.eos.internal.StructWriter
+import gg.sona.eos.internal.allocCString
+import gg.sona.eos.internal.allocCStringArray
+import gg.sona.eos.internal.allocHandleArray
+import gg.sona.eos.internal.setInt32
+import gg.sona.eos.internal.setInt64
+import gg.sona.eos.internal.withCallArena
+import java.lang.foreign.Arena
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemoryLayout
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
+import java.util.concurrent.CompletableFuture
+
+/**
+ * Server-side RTC administration: query join tokens, kick, hard-mute.
+ *
+ * This interface is intended to be used from a trusted server process. The
+ * server's platform options must have the appropriate client credentials.
+ */
+public class EosRtcAdmin internal constructor(private val platform: EosPlatform) {
+
+    private fun handle(): Long {
+        val fn = Native.downcall(
+            "EOS_Platform_GetRTCAdminInterface",
+            FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
+        )
+        return fn.invokeExact(platform.handle) as Long
+    }
+
+    /**
+     * Query for a batch of user tokens that can be used by the supplied user
+     * ids to join a room. The returned tokens should be distributed to the
+     * corresponding clients.
+     */
+    public fun queryJoinRoomToken(
+        localUserId: ProductUserId,
+        roomName: String,
+        targetUserIds: List<ProductUserId>,
+        targetUserIpAddresses: List<String?>? = null,
+    ): CompletableFuture<QueryJoinRoomTokenResult> {
+        val future = CompletableFuture<QueryJoinRoomTokenResult>()
+        val invoker = EosCallback { data ->
+            val result = EosResult.fromValue(data.getInt32(8))
+            val room = readCString(data, 24) ?: ""
+            val clientBaseUrl = readCString(data, 32) ?: ""
+            val queryId = data.getInt32(40).toLong() and 0xffffffffL
+            val tokenCount = data.getInt32(44).toLong() and 0xffffffffL
+            future.complete(QueryJoinRoomTokenResult(result, room, clientBaseUrl, queryId, tokenCount.toInt()))
+        }
+        val stub = CallbackStubs.register(invoker)
+        val options = RtcAdminQueryJoinRoomTokenOptions(
+            localUserId, roomName,
+            targetUserIds.map { it.raw },
+            targetUserIpAddresses,
+        )
+        withCallArena { arena ->
+            val seg = options.writeTo(arena)
+            Native.invokeVoid(
+                "EOS_RTCAdmin_QueryJoinRoomToken",
+                listOf(handle(), seg, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+            )
+        }
+        return future
+    }
+
+    /**
+     * Fetches a user token by index. Call only inside the
+     * [queryJoinRoomToken] completion callback.
+     */
+    public fun copyUserTokenByIndex(queryId: Long, userTokenIndex: Int): RtcAdminUserToken? {
+        return withCallArena { arena ->
+            val options = RtcAdminCopyUserTokenByIndexOptions(userTokenIndex, queryId)
+            val outPtr = arena.allocate(ValueLayout.ADDRESS)
+            val result = EosResult.fromValue(
+                Native.invoke(
+                    "EOS_RTCAdmin_CopyUserTokenByIndex",
+                    listOf(handle(), options.writeTo(arena), outPtr),
+                    listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                    ValueLayout.JAVA_INT,
+                ) as Int
+            )
+            if (result != EosResult.Success) return@withCallArena null
+            val seg = outPtr.get(ValueLayout.ADDRESS, 0)
+            if (seg.address() == 0L) return@withCallArena null
+            val token = RtcAdminUserToken(
+                ProductUserId(seg.getInt64(8)),
+                seg.reinterpret(Long.MAX_VALUE).getString(16),
+            )
+            // Release the C-side allocation
+            val releaseFn = Native.downcall(
+                "EOS_RTCAdmin_UserToken_Release",
+                FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)
+            )
+            releaseFn.invokeExact(seg)
+            token
+        }
+    }
+
+    public fun copyUserTokenByUserId(queryId: Long, targetUserId: ProductUserId): RtcAdminUserToken? {
+        return withCallArena { arena ->
+            val options = RtcAdminCopyUserTokenByUserIdOptions(targetUserId.raw, queryId)
+            val outPtr = arena.allocate(ValueLayout.ADDRESS)
+            val result = EosResult.fromValue(
+                Native.invoke(
+                    "EOS_RTCAdmin_CopyUserTokenByUserId",
+                    listOf(handle(), options.writeTo(arena), outPtr),
+                    listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                    ValueLayout.JAVA_INT,
+                ) as Int
+            )
+            if (result != EosResult.Success) return@withCallArena null
+            val seg = outPtr.get(ValueLayout.ADDRESS, 0)
+            if (seg.address() == 0L) return@withCallArena null
+            val token = RtcAdminUserToken(
+                ProductUserId(seg.getInt64(8)),
+                seg.reinterpret(Long.MAX_VALUE).getString(16),
+            )
+            val releaseFn = Native.downcall(
+                "EOS_RTCAdmin_UserToken_Release",
+                FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)
+            )
+            releaseFn.invokeExact(seg)
+            token
+        }
+    }
+
+    public fun kick(roomName: String, targetUserId: ProductUserId): CompletableFuture<EosResult> {
+        val future = CompletableFuture<EosResult>()
+        val stub = CallbackStubs.register(EosCallback { data ->
+            future.complete(EosResult.fromValue(data.getInt32(8)))
+        })
+        val options = RtcAdminKickOptions(roomName, targetUserId)
+        withCallArena { arena ->
+            val seg = options.writeTo(arena)
+            Native.invokeVoid(
+                "EOS_RTCAdmin_Kick",
+                listOf(handle(), seg, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+            )
+        }
+        return future
+    }
+
+    public fun setParticipantHardMute(
+        roomName: String,
+        targetUserId: ProductUserId,
+        mute: Boolean,
+    ): CompletableFuture<EosResult> {
+        val future = CompletableFuture<EosResult>()
+        val stub = CallbackStubs.register(EosCallback { data ->
+            future.complete(EosResult.fromValue(data.getInt32(8)))
+        })
+        val options = RtcAdminSetParticipantHardMuteOptions(roomName, targetUserId, mute)
+        withCallArena { arena ->
+            val seg = options.writeTo(arena)
+            Native.invokeVoid(
+                "EOS_RTCAdmin_SetParticipantHardMute",
+                listOf(handle(), seg, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+            )
+        }
+        return future
+    }
+}
+
+public class QueryJoinRoomTokenResult(
+    public val result: EosResult,
+    public val roomName: String,
+    public val clientBaseUrl: String,
+    public val queryId: Long,
+    public val tokenCount: Int,
+)
+
+public class RtcAdminUserToken(
+    public val productUserId: ProductUserId,
+    public val token: String,
+)
+
+internal class RtcAdminQueryJoinRoomTokenOptions(
+    var localUserId: ProductUserId,
+    var roomName: String,
+    var targetUserIds: List<Long>,
+    var targetUserIpAddresses: List<String?>?,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, 2)
+        seg.setInt64(8, localUserId.raw)
+        seg.setInt64(16, arena.allocCString(roomName).address())
+        val userIdsArr = arena.allocHandleArray(targetUserIds)
+        seg.setInt64(24, userIdsArr.address())
+        seg.setInt32(32, targetUserIds.size)
+        val ipArr = targetUserIpAddresses?.let { arena.allocCStringArray(it) } ?: MemorySegment.NULL
+        seg.setInt64(40, ipArr.address())
+        return seg
+    }
+
+    companion object {
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4), ValueLayout.ADDRESS,
+        )
+    }
+}
+
+internal class RtcAdminCopyUserTokenByIndexOptions(
+    var userTokenIndex: Int,
+    var queryId: Long,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, 2)
+        seg.setInt32(8, userTokenIndex)
+        seg.setInt32(12, queryId.toInt())
+        return seg
+    }
+
+    companion object {
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.JAVA_INT, ValueLayout.JAVA_INT,
+        )
+    }
+}
+
+internal class RtcAdminCopyUserTokenByUserIdOptions(
+    var targetUserId: Long,
+    var queryId: Long,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, 2)
+        seg.setInt64(8, targetUserId)
+        seg.setInt32(16, queryId.toInt())
+        return seg
+    }
+
+    companion object {
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
+        )
+    }
+}
+
+internal class RtcAdminKickOptions(
+    var roomName: String,
+    var targetUserId: ProductUserId,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, 1)
+        seg.setInt64(8, arena.allocCString(roomName).address())
+        seg.setInt64(16, targetUserId.raw)
+        return seg
+    }
+
+    companion object {
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS, ValueLayout.JAVA_LONG,
+        )
+    }
+}
+
+internal class RtcAdminSetParticipantHardMuteOptions(
+    var roomName: String,
+    var targetUserId: ProductUserId,
+    var mute: Boolean,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, 1)
+        seg.setInt64(8, arena.allocCString(roomName).address())
+        seg.setInt64(16, targetUserId.raw)
+        seg.setInt32(24, if (mute) 1 else 0)
+        return seg
+    }
+
+    companion object {
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
+        )
+    }
+}
