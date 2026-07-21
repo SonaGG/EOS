@@ -69,47 +69,6 @@ try {
 }
 ```
 
-## Subsystem coverage
-
-| Subsystem               | Status    | Notes                                       |
-|-------------------------|-----------|---------------------------------------------|
-| `Eos` (init/shutdown)   | Full      | Version, byte array helpers                 |
-| `EosPlatform`           | Full      | Tick, application/network status            |
-| `EosAuth`               | Full      | Login, logout, login status notifications   |
-| `EosConnect`            | Full      | External account login, device id, mapping |
-| `EosFriends`            | Full      | Friend list, invites, block list           |
-| `EosPresence`           | Full      | Query, presence notifications               |
-| `EosUserInfo`           | Full      | User info query, local platform type        |
-| `EosP2P`                | **Full**  | Send/receive, NAT, relay control            |
-| `EosRtc`                | **Full**  | Room join/leave, all notifications          |
-| `EosRtcAudio`           | **Full**  | Send audio, mute, volume, devices, buffers  |
-| `EosRtcData`            | **Full**  | In-room data channel                        |
-| `EosRtcAdmin`           | **Full**  | Server-side kick, hard mute, token query   |
-| `EosAntiCheatClient`    | **Full**  | Begin/end session, peer registration, NetProtect encryption, integrity callbacks |
-| `EosAntiCheatServer`    | **Full**  | Begin/end session, register/unregister clients, NetProtect encryption, Cerberus event logging |
-| `EosLogging`            | Full      | Categories, levels, message callback        |
-| `EosLobby`              | Partial   | Handle accessor; full session API WIP       |
-| `EosSessions`           | Partial   | Handle accessor; full session API WIP       |
-| `EosAchievements`       | Partial   | Handle accessor                             |
-| `EosStats`              | Partial   | Handle accessor                             |
-| `EosLeaderboards`       | Partial   | Handle accessor                             |
-| `EosEcom`               | Partial   | Handle accessor                             |
-| `EosUi`                 | Partial   | Handle accessor                             |
-| `EosMetrics`            | Partial   | Handle accessor                             |
-| `EosMods`               | Partial   | Handle accessor                             |
-| `EosReports`            | Partial   | Handle accessor                             |
-| `EosSanctions`          | Partial   | Handle accessor                             |
-| `EosKws`                | Partial   | Handle accessor                             |
-| `EosCustomInvites`      | Partial   | Handle accessor                             |
-| `EosProgressionSnapshot`| Partial   | Handle accessor                             |
-| `EosIntegratedPlatform` | Partial   | Handle accessor                             |
-| `EosPlayerDataStorage`  | Partial   | Handle accessor                             |
-| `EosTitleStorage`       | Partial   | Handle accessor                             |
-
-The partial subsystems expose the C handle accessor and are ready to be
-extended with the rest of their methods. Each has a working `handle()`
-method that obtains the subsystem handle from the platform.
-
 ## Anti-Cheat example
 
 The anti-cheat client/server pair is fully implemented and easy to use:
@@ -196,22 +155,3 @@ The shared library is loaded automatically from one of:
    file at startup. Place the appropriate binary here for your target
    platform (`EOSSDK-Win64-Shipping.dll`, `libEOSSDK-Linux-Shipping.so`,
    or `libEOSSDK-Mac-Shipping.dylib`).
-
-The Kotlin build automatically copies the binary from `EOS_SDK/SDK/Bin/`
-into the JAR at build time.
-
-## Building
-
-```
-./gradlew build
-```
-
-The build uses JDK 25 and Kotlin 2.4.0. The FFM API is used for all
-native interop; no JNI is generated.
-
-## Code generation
-
-`scripts/codegen.py` is a small helper that parses the EOS C headers
-and emits Kotlin skeletons for enums and structs. It is not a full
-transpiler; the output is meant as a starting point. The bindings in
-this repository were written and curated by hand.
