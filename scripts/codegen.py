@@ -183,13 +183,15 @@ def parse_structs(path: Path) -> list[StructDef]:
         name = m.group(1)
         body = m.group(2)
         api_latest = None
-        for m2 in re.finditer(
-            rf"#define\s+(?:{re.escape(name)}_API_LATEST|EOS_[A-Z_]+_API_LATEST)\s+(\d+)",
-            text,
-        ):
-            if name in text[max(0, m2.start() - 200) : m2.start()]:
+        struct_start = m.start()
+        best_distance = None
+        for m2 in re.finditer(r"#define\s+EOS_[A-Z0-9_]+_API_LATEST\s+(\d+)", text):
+            if m2.start() >= struct_start:
+                continue
+            distance = struct_start - m2.start()
+            if best_distance is None or distance < best_distance:
+                best_distance = distance
                 api_latest = int(m2.group(1))
-                break
         fields: list[StructField] = []
         for line in body.splitlines():
             line = line.strip().rstrip(";")

@@ -68,11 +68,17 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
     /**
      * Log in using the credentials of an external account provider (Steam,
      * PSN, Apple, etc.).
+     *
+     * [displayName] and [nsaIdToken] populate the optional `UserLoginInfo`
+     * struct; [displayName] is required for Amazon, Apple, Google, Nintendo,
+     * Oculus, and Device ID logins, and [nsaIdToken] is required on Nintendo
+     * Switch for any credential type other than [EosExternalCredentialType.NintendoNsaIdToken].
      */
     public fun login(
-        localUserId: ProductUserId,
         credentialType: EosExternalCredentialType,
         token: String,
+        displayName: String? = null,
+        nsaIdToken: String? = null,
     ): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
@@ -82,7 +88,14 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
             future.complete(LoginResult(result, localUserId, ct))
         }
         val handle = CallbackStubs.register(invoker)
-        val options = ConnectLoginOptions(localUserId, credentialType, token)
+        val options = ConnectLoginOptions(
+            credentials = ConnectCredentials(token, credentialType),
+            userLoginInfo = if (displayName != null || nsaIdToken != null) {
+                ConnectUserLoginInfo(displayName, nsaIdToken)
+            } else {
+                null
+            },
+        )
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
@@ -139,8 +152,6 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
     public fun linkAccount(
         localUserId: ProductUserId,
         continuanceToken: ContinuanceToken,
-        credentialType: EosExternalCredentialType,
-        token: String,
     ): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
@@ -149,7 +160,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
             future.complete(LoginResult(result, localUserId, ContinuanceToken(0L)))
         }
         val handle = CallbackStubs.register(invoker)
-        val options = ConnectLinkAccountOptions(localUserId, continuanceToken, credentialType, token)
+        val options = ConnectLinkAccountOptions(localUserId, continuanceToken)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
@@ -262,25 +273,72 @@ public class LoginStatusChangedInfo(
     public val currentStatus: EosLoginStatus,
 )
 
-internal class ConnectLoginOptions(
-    var localUserId: ProductUserId,
-    var credentialType: EosExternalCredentialType,
+internal class ConnectCredentials(
     var token: String,
+    var type: EosExternalCredentialType,
 ) : StructWriter {
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, API_LATEST)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt32(16, credentialType.value)
-        seg.setInt64(24, arena.allocCString(token).address())
+        seg.setInt64(8, arena.allocCString(token).address())
+        seg.setInt32(16, type.value)
         return seg
     }
 
     companion object {
-        const val API_LATEST = 3
+        // EOS_CONNECT_CREDENTIALS_API_LATEST
+        const val API_LATEST = 1
         val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS,
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+        )
+    }
+}
+
+internal class ConnectUserLoginInfo(
+    var displayName: String?,
+    var nsaIdToken: String?,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, API_LATEST)
+        seg.setInt64(8, arena.allocCString(displayName).address())
+        seg.setInt64(16, arena.allocCString(nsaIdToken).address())
+        return seg
+    }
+
+    companion object {
+        // EOS_CONNECT_USERLOGININFO_API_LATEST
+        const val API_LATEST = 2
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS,
+            ValueLayout.ADDRESS,
+        )
+    }
+}
+
+internal class ConnectLoginOptions(
+    var credentials: ConnectCredentials,
+    var userLoginInfo: ConnectUserLoginInfo?,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        val credentialsSeg = credentials.writeTo(arena)
+        val userLoginInfoAddress = userLoginInfo?.writeTo(arena)?.address() ?: 0L
+        seg.setInt32(0, API_LATEST)
+        seg.setInt64(8, credentialsSeg.address())
+        seg.setInt64(16, userLoginInfoAddress)
+        return seg
+    }
+
+    companion object {
+        // EOS_CONNECT_LOGIN_API_LATEST
+        const val API_LATEST = 2
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS,
             ValueLayout.ADDRESS,
         )
     }
@@ -323,26 +381,21 @@ internal class ConnectCreateUserOptions(var continuanceToken: ContinuanceToken) 
 internal class ConnectLinkAccountOptions(
     var localUserId: ProductUserId,
     var continuanceToken: ContinuanceToken,
-    var credentialType: EosExternalCredentialType,
-    var token: String,
 ) : StructWriter {
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, API_LATEST)
         seg.setInt64(8, localUserId.raw)
         seg.setInt64(16, continuanceToken.raw)
-        seg.setInt32(24, credentialType.value)
-        seg.setInt64(32, arena.allocCString(token).address())
         return seg
     }
 
     companion object {
-        const val API_LATEST = 3
+        // EOS_CONNECT_LINKACCOUNT_API_LATEST
+        const val API_LATEST = 1
         val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
             ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.ADDRESS,
         )
     }
 }

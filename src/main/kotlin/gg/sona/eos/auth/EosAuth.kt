@@ -33,6 +33,7 @@ import gg.sona.eos.internal.getBool
 
 import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
+import gg.sona.eos.common.EosExternalCredentialType
 import gg.sona.eos.common.EosLoginStatus
 import gg.sona.eos.common.EpicAccountId
 import gg.sona.eos.internal.CallbackStubs
@@ -70,8 +71,9 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
         credentialType: EosAuthCredentialType,
         credentialId: String? = null,
         credentialToken: String? = null,
-        continueLoginToken: EpicAccountId? = null,
+        externalCredentialType: EosExternalCredentialType? = null,
         scopeFlags: Set<EosAuthScopeFlags> = emptySet(),
+        loginFlags: Long = 0L,
     ): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
@@ -81,11 +83,14 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
         }
         val handle = CallbackStubs.register(invoker)
         val options = AuthLoginOptions(
-            credentialType = credentialType,
-            id = credentialId,
-            token = credentialToken,
-            continueLoginToken = continueLoginToken,
+            credentials = AuthCredentials(
+                id = credentialId,
+                token = credentialToken,
+                type = credentialType,
+                externalType = externalCredentialType,
+            ),
             scopeFlags = scopeFlags.fold(0) { acc, f -> acc or f.value },
+            loginFlags = loginFlags,
         )
         withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -213,31 +218,59 @@ public class LoginStatusChangedInfo(
     public val currentStatus: EosLoginStatus,
 )
 
-internal class AuthLoginOptions(
-    var credentialType: EosAuthCredentialType,
+internal class AuthCredentials(
     var id: String?,
     var token: String?,
-    var continueLoginToken: EpicAccountId?,
-    var scopeFlags: Int,
+    var type: EosAuthCredentialType,
+    var externalType: EosExternalCredentialType?,
 ) : StructWriter {
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, API_LATEST)
-        seg.setInt32(8, credentialType.value)
-        seg.setInt64(16, arena.allocCString(id).address())
-        seg.setInt64(24, arena.allocCString(token).address())
-        seg.setInt64(32, continueLoginToken?.raw ?: 0L)
-        seg.setInt32(40, scopeFlags)
+        seg.setInt64(8, arena.allocCString(id).address())
+        seg.setInt64(16, arena.allocCString(token).address())
+        seg.setInt32(24, type.value)
+        seg.setInt64(32, 0L) // SystemAuthCredentialsOptions - unsupported
+        seg.setInt32(40, externalType?.value ?: 0)
         return seg
     }
 
     companion object {
+        // EOS_AUTH_CREDENTIALS_API_LATEST
         const val API_LATEST = 4
         val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS, ValueLayout.ADDRESS,
             ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
-            MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS,
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+        )
+    }
+}
+
+internal class AuthLoginOptions(
+    var credentials: AuthCredentials,
+    var scopeFlags: Int,
+    var loginFlags: Long,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        val credentialsSeg = credentials.writeTo(arena)
+        seg.setInt32(0, API_LATEST)
+        seg.setInt64(8, credentialsSeg.address())
+        seg.setInt32(16, scopeFlags)
+        seg.setInt64(24, loginFlags)
+        return seg
+    }
+
+    companion object {
+        // EOS_AUTH_LOGIN_API_LATEST
+        const val API_LATEST = 3
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.ADDRESS,
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.JAVA_LONG,
         )
     }
 }

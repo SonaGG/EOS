@@ -47,9 +47,9 @@ try {
 
     // 4. Log in to a user account.
     val loginResult = platform.connect.login(
-        localUserId = ProductUserId.Invalid,
         credentialType = EosExternalCredentialType.DeviceIdAccessToken,
         token = "...",
+        displayName = "Player",
     ).get()
 
     val userId = loginResult.localUserId

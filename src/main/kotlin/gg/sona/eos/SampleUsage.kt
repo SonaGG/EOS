@@ -78,7 +78,6 @@ object SampleUsage {
         //    here are for an Epic Account Services login; for Steam/PSN/etc
         //    use the matching EosExternalCredentialType.
         val loginResult = platform.connect.login(
-            localUserId = ProductUserId.Invalid,
             credentialType = EosExternalCredentialType.Epic,
             token = "<your-token-here>",
         ).join()
