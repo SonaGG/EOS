@@ -20,14 +20,16 @@ import gg.sona.eos.EosResult
 import gg.sona.eos.common.EpicAccountId
 import gg.sona.eos.ecom.EosEcom.Companion.MAX_OWNERSHIP_CATALOG_IDS
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /**
  * Ecom interface. Exposes catalog queries, ownership checks, entitlement
  * queries, and the checkout flow.
  */
-public class EosEcom internal constructor(private val platform: EosPlatform) {
+class EosEcom internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -43,7 +45,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
      * Query the ownership status for a list of catalog item IDs.
      * Up to [MAX_OWNERSHIP_CATALOG_IDS] IDs may be queried at once.
      */
-    public fun queryOwnership(
+    fun queryOwnership(
         localUserId: EpicAccountId,
         catalogItemIds: List<String>,
         sandboxIds: List<String>? = null,
@@ -68,7 +70,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun queryOwnershipBySandboxIds(
+    fun queryOwnershipBySandboxIds(
         localUserId: EpicAccountId,
         sandboxIds: List<String>,
         catalogItemIds: List<String>,
@@ -99,7 +101,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun queryOwnershipToken(
+    fun queryOwnershipToken(
         localUserId: EpicAccountId,
         catalogItemIds: List<String>,
     ): CompletableFuture<QueryOwnershipTokenResult> {
@@ -132,7 +134,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
 
     // region Entitlements
 
-    public fun queryEntitlements(
+    fun queryEntitlements(
         localUserId: EpicAccountId? = null,
         entitlementNames: List<String>? = null,
         includeRedeemed: Boolean = false,
@@ -156,7 +158,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun queryEntitlementToken(
+    fun queryEntitlementToken(
         localUserId: EpicAccountId,
         entitlementNames: List<String>? = null,
     ): CompletableFuture<QueryEntitlementTokenResult> {
@@ -182,7 +184,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun getEntitlementsCount(localUserId: EpicAccountId): Int {
+    fun getEntitlementsCount(localUserId: EpicAccountId): Int {
         val options = EcomGetEntitlementsCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -195,7 +197,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun getEntitlementsByNameCount(localUserId: EpicAccountId, name: String): Int {
+    fun getEntitlementsByNameCount(localUserId: EpicAccountId, name: String): Int {
         val options = EcomGetEntitlementsByNameCountOptions(localUserId, name)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -208,13 +210,13 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun copyEntitlementByIndex(localUserId: EpicAccountId, index: Int): EcomEntitlement? =
+    fun copyEntitlementByIndex(localUserId: EpicAccountId, index: Int): EcomEntitlement? =
         copyEntitlement(
             "EOS_Ecom_CopyEntitlementByIndex",
             EcomCopyEntitlementByIndexOptions(localUserId, index),
         )
 
-    public fun copyEntitlementByNameAndIndex(
+    fun copyEntitlementByNameAndIndex(
         localUserId: EpicAccountId,
         name: String,
         index: Int,
@@ -223,7 +225,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         EcomCopyEntitlementByNameAndIndexOptions(localUserId, name, index),
     )
 
-    public fun copyEntitlementById(localUserId: EpicAccountId, id: String): EcomEntitlement? =
+    fun copyEntitlementById(localUserId: EpicAccountId, id: String): EcomEntitlement? =
         copyEntitlement(
             "EOS_Ecom_CopyEntitlementById",
             EcomCopyEntitlementByIdOptions(localUserId, id),
@@ -264,7 +266,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
 
     // region Catalog offers
 
-    public fun queryOffers(
+    fun queryOffers(
         localUserId: EpicAccountId? = null,
         overrideCatalogNamespace: String? = null,
     ): CompletableFuture<EosResult> {
@@ -285,7 +287,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun getOfferCount(localUserId: EpicAccountId? = null): Int {
+    fun getOfferCount(localUserId: EpicAccountId? = null): Int {
         val options = EcomGetOfferCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -298,7 +300,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun copyOfferByIndex(localUserId: EpicAccountId?, index: Int): EcomCatalogOffer? =
+    fun copyOfferByIndex(localUserId: EpicAccountId?, index: Int): EcomCatalogOffer? =
         withCallArena { arena ->
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
             val options = EcomCopyOfferByIndexOptions(localUserId, index)
@@ -337,7 +339,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             offer
         }
 
-    public fun copyOfferById(localUserId: EpicAccountId?, offerId: String): EcomCatalogOffer? =
+    fun copyOfferById(localUserId: EpicAccountId?, offerId: String): EcomCatalogOffer? =
         withCallArena { arena ->
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
             val options = EcomCopyOfferByIdOptions(localUserId, offerId)
@@ -380,7 +382,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
 
     // region Checkout / redeem
 
-    public fun checkout(
+    fun checkout(
         localUserId: EpicAccountId,
         entries: List<CheckoutEntry>,
         preOrderPurchase: Boolean = false,
@@ -410,7 +412,7 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun redeemEntitlements(
+    fun redeemEntitlements(
         localUserId: EpicAccountId,
         entitlementIds: List<String>,
     ): CompletableFuture<EosResult> {
@@ -442,18 +444,18 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         return ptr.reinterpret(Long.MAX_VALUE).getString(0)
     }
 
-    public companion object {
-        public const val MAX_OWNERSHIP_CATALOG_IDS: Int = 400
-        public const val MAX_OWNERSHIP_SANDBOX_IDS: Int = 10
-        public const val MAX_OWNERSHIP_TOKEN_CATALOG_IDS: Int = 32
-        public const val MAX_QUERY_ENTITLEMENT_IDS: Int = 256
-        public const val MAX_QUERY_ENTITLEMENT_TOKEN_IDS: Int = 32
-        public const val MAX_CHECKOUT_ENTRIES: Int = 10
-        public const val REDEEM_MAX_ENTITLEMENT_IDS: Int = 32
-        public const val ENTITLEMENT_ID_MAX_LENGTH: Int = 32
-        public const val CATALOG_ITEM_ID_MAX_LENGTH: Int = 32
-        public const val CATALOG_OFFER_ID_MAX_LENGTH: Int = 32
-        public const val TRANSACTION_ID_MAX_LENGTH: Int = 64
-        public const val ENTITLEMENT_END_TIMESTAMP_UNDEFINED: Long = -1L
+    companion object {
+        const val MAX_OWNERSHIP_CATALOG_IDS: Int = 400
+        const val MAX_OWNERSHIP_SANDBOX_IDS: Int = 10
+        const val MAX_OWNERSHIP_TOKEN_CATALOG_IDS: Int = 32
+        const val MAX_QUERY_ENTITLEMENT_IDS: Int = 256
+        const val MAX_QUERY_ENTITLEMENT_TOKEN_IDS: Int = 32
+        const val MAX_CHECKOUT_ENTRIES: Int = 10
+        const val REDEEM_MAX_ENTITLEMENT_IDS: Int = 32
+        const val ENTITLEMENT_ID_MAX_LENGTH: Int = 32
+        const val CATALOG_ITEM_ID_MAX_LENGTH: Int = 32
+        const val CATALOG_OFFER_ID_MAX_LENGTH: Int = 32
+        const val TRANSACTION_ID_MAX_LENGTH: Int = 64
+        const val ENTITLEMENT_END_TIMESTAMP_UNDEFINED: Long = -1L
     }
 }

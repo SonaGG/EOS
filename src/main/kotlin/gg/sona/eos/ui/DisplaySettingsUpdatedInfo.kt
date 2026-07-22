@@ -1,6 +1,6 @@
 package gg.sona.eos.ui
 
-public class DisplaySettingsUpdatedInfo(
-    public val friendsOverlayVisible: Boolean,
-    public val friendsOverlayExclusiveInput: Boolean,
+class DisplaySettingsUpdatedInfo(
+    val friendsOverlayVisible: Boolean,
+    val friendsOverlayExclusiveInput: Boolean,
 )

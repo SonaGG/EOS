@@ -10,7 +10,7 @@ import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
 /** A custom event parameter definition. */
-public class EventParamDef(public val name: String, public val type: EosAntiCheatCommon.EventParamType) {
+class EventParamDef(val name: String, val type: EosAntiCheatCommon.EventParamType) {
     internal fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(MemoryLayout.structLayout(ValueLayout.ADDRESS, ValueLayout.JAVA_INT))
         seg.setInt64(0, arena.allocCString(name).address())

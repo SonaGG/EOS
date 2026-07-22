@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Leaderboards interface.
  */
-public class EosLeaderboards internal constructor(private val platform: EosPlatform) {
+class EosLeaderboards internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -38,7 +38,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
     }
 
     /** Query leaderboard definitions from the backend. */
-    public fun queryLeaderboardDefinitions(
+    fun queryLeaderboardDefinitions(
         localUserId: ProductUserId? = null,
         startTime: Long = TIME_UNDEFINED,
         endTime: Long = TIME_UNDEFINED,
@@ -62,7 +62,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         return future
     }
 
-    public fun getLeaderboardDefinitionCount(): Int {
+    fun getLeaderboardDefinitionCount(): Int {
         val options = LeaderboardsGetLeaderboardDefinitionCountOptions()
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -75,7 +75,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         }
     }
 
-    public fun copyLeaderboardDefinitionByIndex(index: Int): LeaderboardDefinition? =
+    fun copyLeaderboardDefinitionByIndex(index: Int): LeaderboardDefinition? =
         withCallArena { arena ->
             val options = LeaderboardsCopyLeaderboardDefinitionByIndexOptions(index)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -98,7 +98,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
             def
         }
 
-    public fun copyLeaderboardDefinitionByLeaderboardId(
+    fun copyLeaderboardDefinitionByLeaderboardId(
         leaderboardId: String,
     ): LeaderboardDefinition? = withCallArena { arena ->
         val options = LeaderboardsCopyLeaderboardDefinitionByLeaderboardIdOptions(leaderboardId)
@@ -122,7 +122,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         def
     }
 
-    public fun queryLeaderboardRanks(
+    fun queryLeaderboardRanks(
         leaderboardId: String,
         localUserId: ProductUserId? = null,
     ): CompletableFuture<QueryLeaderboardRanksResult> {
@@ -148,7 +148,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         return future
     }
 
-    public fun getLeaderboardRecordCount(): Int {
+    fun getLeaderboardRecordCount(): Int {
         val options = LeaderboardsGetLeaderboardRecordCountOptions()
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -161,7 +161,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         }
     }
 
-    public fun copyLeaderboardRecordByIndex(index: Int): LeaderboardRecord? =
+    fun copyLeaderboardRecordByIndex(index: Int): LeaderboardRecord? =
         withCallArena { arena ->
             val options = LeaderboardsCopyLeaderboardRecordByIndexOptions(index)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -184,7 +184,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
             rec
         }
 
-    public fun copyLeaderboardRecordByUserId(userId: ProductUserId): LeaderboardRecord? =
+    fun copyLeaderboardRecordByUserId(userId: ProductUserId): LeaderboardRecord? =
         withCallArena { arena ->
             val options = LeaderboardsCopyLeaderboardRecordByUserIdOptions(userId)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -207,7 +207,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
             rec
         }
 
-    public fun queryLeaderboardUserScores(
+    fun queryLeaderboardUserScores(
         userIds: List<ProductUserId>,
         statInfo: List<UserScoresQueryStatInfo>,
         localUserId: ProductUserId? = null,
@@ -233,7 +233,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         return future
     }
 
-    public fun getLeaderboardUserScoreCount(statName: String): Int {
+    fun getLeaderboardUserScoreCount(statName: String): Int {
         val options = LeaderboardsGetLeaderboardUserScoreCountOptions(statName)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -246,7 +246,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         }
     }
 
-    public fun copyLeaderboardUserScoreByIndex(
+    fun copyLeaderboardUserScoreByIndex(
         statName: String,
         index: Int,
     ): LeaderboardUserScore? = withCallArena { arena ->
@@ -271,7 +271,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         rec
     }
 
-    public fun copyLeaderboardUserScoreByUserId(
+    fun copyLeaderboardUserScoreByUserId(
         statName: String,
         userId: ProductUserId,
     ): LeaderboardUserScore? = withCallArena { arena ->
@@ -322,7 +322,7 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         score = seg.getInt32(16),
     )
 
-    public companion object {
-        public const val TIME_UNDEFINED: Long = -1L
+    companion object {
+        const val TIME_UNDEFINED: Long = -1L
     }
 }

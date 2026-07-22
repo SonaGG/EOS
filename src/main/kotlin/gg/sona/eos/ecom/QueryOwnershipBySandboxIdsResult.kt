@@ -3,8 +3,8 @@ package gg.sona.eos.ecom
 import gg.sona.eos.EosResult
 import gg.sona.eos.common.EpicAccountId
 
-public class QueryOwnershipBySandboxIdsResult(
-    public val result: EosResult,
-    public val localUserId: EpicAccountId,
-    public val sandboxIdCount: Int,
+class QueryOwnershipBySandboxIdsResult(
+    val result: EosResult,
+    val localUserId: EpicAccountId,
+    val sandboxIdCount: Int,
 )

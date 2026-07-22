@@ -1,7 +1,7 @@
 package gg.sona.eos.p2p
 
 /** Reason a P2P connection was closed. */
-public enum class EosConnectionClosedReason(val value: Int) {
+enum class EosConnectionClosedReason(val value: Int) {
     Unknown(0),
     ClosedByLocalUser(1),
     ClosedByPeer(2),
@@ -15,7 +15,7 @@ public enum class EosConnectionClosedReason(val value: Int) {
     UnexpectedError(10),
     ConnectionIgnored(11);
 
-    public companion object {
-        public fun fromValue(v: Int): EosConnectionClosedReason = entries.firstOrNull { it.value == v } ?: Unknown
+    companion object {
+        fun fromValue(v: Int): EosConnectionClosedReason = entries.firstOrNull { it.value == v } ?: Unknown
     }
 }

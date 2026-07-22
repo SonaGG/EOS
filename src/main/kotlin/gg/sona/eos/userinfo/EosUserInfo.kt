@@ -21,11 +21,13 @@ import gg.sona.eos.common.EosExternalAccountType
 import gg.sona.eos.common.EosOnlinePlatform
 import gg.sona.eos.common.EpicAccountId
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /** UserInfo interface for fetching user information such as display name. */
-public class EosUserInfo internal constructor(private val platform: EosPlatform) {
+class EosUserInfo internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -35,7 +37,7 @@ public class EosUserInfo internal constructor(private val platform: EosPlatform)
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryUserInfo(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun queryUserInfo(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_UserInfo_QueryUserInfoCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -53,7 +55,10 @@ public class EosUserInfo internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun queryUserInfoByDisplayName(localUserId: EpicAccountId, displayName: String): CompletableFuture<EosResult> {
+    fun queryUserInfoByDisplayName(
+        localUserId: EpicAccountId,
+        displayName: String
+    ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_UserInfo_QueryUserInfoByDisplayNameCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24, DisplayName@32
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -71,7 +76,7 @@ public class EosUserInfo internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun queryUserInfoByExternalAccount(
+    fun queryUserInfoByExternalAccount(
         localUserId: EpicAccountId,
         externalAccountType: EosExternalAccountType,
         externalAccountId: String,
@@ -93,7 +98,7 @@ public class EosUserInfo internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun getLocalPlatformType(): EosOnlinePlatform = withCallArena { arena ->
+    fun getLocalPlatformType(): EosOnlinePlatform = withCallArena { arena ->
         val options = UserInfoGetLocalPlatformTypeOptions()
         EosOnlinePlatform.fromValue(
             Native.invoke(

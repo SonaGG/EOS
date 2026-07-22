@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * Local user login status reported by EOS.
  */
-public enum class EosLoginStatus {
+enum class EosLoginStatus {
     /** No user has logged in or chosen a local profile. */
     NotLoggedIn,
 
@@ -13,7 +13,7 @@ public enum class EosLoginStatus {
     /** The user has been validated by the platform-specific authentication service. */
     LoggedIn;
 
-    public companion object {
+    companion object {
         internal fun fromValue(v: Int): EosLoginStatus = when (v) {
             0 -> NotLoggedIn
             1 -> UsingLocalProfile

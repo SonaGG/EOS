@@ -2,6 +2,7 @@ package gg.sona.eos.rtc
 
 import gg.sona.eos.common.ProductUserId
 import gg.sona.eos.internal.StructWriter
+import gg.sona.eos.internal.allocCString
 import gg.sona.eos.internal.allocCStringArray
 import gg.sona.eos.internal.allocHandleArray
 import gg.sona.eos.internal.setInt32

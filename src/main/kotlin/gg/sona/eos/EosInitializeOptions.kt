@@ -15,23 +15,9 @@
  */
 package gg.sona.eos
 
-import gg.sona.eos.internal.setInt8
-import gg.sona.eos.internal.setInt16
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.setFloat
-import gg.sona.eos.internal.setDouble
-import gg.sona.eos.internal.setBool
-import gg.sona.eos.internal.getInt8
-import gg.sona.eos.internal.getInt16
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.getFloat
-import gg.sona.eos.internal.getDouble
-import gg.sona.eos.internal.getBool
-
 import gg.sona.eos.internal.StructWriter
 import gg.sona.eos.internal.allocCString
+import gg.sona.eos.internal.setInt32
 import java.lang.foreign.Arena
 import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
@@ -45,16 +31,16 @@ import java.lang.foreign.ValueLayout
  * [reallocateMemory], and [releaseMemory]; when not provided, EOS uses the
  * default system allocator.
  */
-public class EosInitializeOptions internal constructor() : StructWriter {
+class EosInitializeOptions internal constructor() : StructWriter {
 
     /** API version. Set automatically by [build]. */
-    public var apiVersion: Int = API_LATEST
+    var apiVersion: Int = API_LATEST
 
     /** Required. The product name shown in logs and the dev portal. Max 64 bytes. */
-    public var productName: String = ""
+    var productName: String = ""
 
     /** Required. The product version shown in logs and the dev portal. Max 64 bytes. */
-    public var productVersion: String = ""
+    var productVersion: String = ""
 
     /**
      * Optional memory allocator. Signature: `(size: long, alignment: long) -> long`,
@@ -62,13 +48,13 @@ public class EosInitializeOptions internal constructor() : StructWriter {
      * failure. If non-null, [reallocateMemory] and [releaseMemory] must also be
      * provided.
      */
-    public var allocateMemory: ((size: Long, alignment: Long) -> Long)? = null
+    var allocateMemory: ((size: Long, alignment: Long) -> Long)? = null
 
     /** Optional memory reallocator. See [allocateMemory] for the contract. */
-    public var reallocateMemory: ((pointer: Long, size: Long, alignment: Long) -> Long)? = null
+    var reallocateMemory: ((pointer: Long, size: Long, alignment: Long) -> Long)? = null
 
     /** Optional memory releaser. Signature: `(pointer: Long) -> Unit`. */
-    public var releaseMemory: ((pointer: Long) -> Unit)? = null
+    var releaseMemory: ((pointer: Long) -> Unit)? = null
 
     override fun writeTo(arena: Arena): MemorySegment {
         // Custom allocators are intentionally not yet supported via the FFM upcall
@@ -91,11 +77,11 @@ public class EosInitializeOptions internal constructor() : StructWriter {
         return seg
     }
 
-    public fun build(): EosInitializeOptions = this
+    fun build(): EosInitializeOptions = this
 
-    public companion object {
+    companion object {
         /** Latest API version supported by the binding. */
-        public const val API_LATEST: Int = 5
+        const val API_LATEST: Int = 5
 
         internal val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT.withName("ApiVersion"),
@@ -121,7 +107,7 @@ public class EosInitializeOptions internal constructor() : StructWriter {
         internal const val OFFSET_THREAD_AFFINITY: Long = 64
 
         /** Construct a new options builder with the required fields. */
-        public fun create(productName: String, productVersion: String): EosInitializeOptions =
+        fun create(productName: String, productVersion: String): EosInitializeOptions =
             EosInitializeOptions().apply {
                 this.productName = productName
                 this.productVersion = productVersion

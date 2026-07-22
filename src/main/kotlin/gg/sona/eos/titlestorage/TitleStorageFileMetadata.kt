@@ -1,8 +1,8 @@
 package gg.sona.eos.titlestorage
 
-public class TitleStorageFileMetadata(
-    public val filename: String,
-    public val md5: String,
-    public val fileSizeBytes: Long,
-    public val lastModifiedTime: Long,
+class TitleStorageFileMetadata(
+    val filename: String,
+    val md5: String,
+    val fileSizeBytes: Long,
+    val lastModifiedTime: Long,
 )

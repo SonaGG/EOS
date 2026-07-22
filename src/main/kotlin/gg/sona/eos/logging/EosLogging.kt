@@ -28,7 +28,7 @@ import java.lang.foreign.ValueLayout
  * The Logging interface allows registering a callback to receive log messages
  * from the SDK, and to control the verbosity per category.
  */
-public object EosLogging {
+object EosLogging {
 
     private var currentCallback: EosLogMessageFunc? = null
     private var currentCallbackId: Long = -1L
@@ -39,7 +39,7 @@ public object EosLogging {
      * set callback will no longer be called. The supplied callback must
      * remain valid until replaced.
      */
-    public fun setCallback(callback: EosLogMessageFunc?): EosResult {
+    fun setCallback(callback: EosLogMessageFunc?): EosResult {
         synchronized(callbackLock) {
             if (currentCallbackId != -1L) {
                 CallbackStubs.release(currentCallbackId)
@@ -80,7 +80,7 @@ public object EosLogging {
      * Set the log level for a category. The default is `Warning` for all
      * categories. Use [EosLogCategory.AllCategories] to apply to all at once.
      */
-    public fun setLogLevel(category: EosLogCategory, level: EosLogLevel): EosResult {
+    fun setLogLevel(category: EosLogCategory, level: EosLogLevel): EosResult {
         val fn = Native.downcall(
             "EOS_Logging_SetLogLevel",
             FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT)

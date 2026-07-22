@@ -11,10 +11,10 @@ import java.lang.foreign.ValueLayout
  * Use [stringify] to serialize for later use.
  */
 @JvmInline
-public value class ContinuanceToken(public val raw: Long) {
-    public fun isValid(): Boolean = raw != 0L
+value class ContinuanceToken(val raw: Long) {
+    fun isValid(): Boolean = raw != 0L
 
-    public fun stringify(): String {
+    fun stringify(): String {
         if (raw == 0L) return ""
         return withCallArena { arena ->
             val sizePtr = arena.allocate(ValueLayout.JAVA_INT)

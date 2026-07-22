@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * Comparison operator used for session and lobby attribute searches.
  */
-public enum class EosComparisonOp(val value: Int) {
+enum class EosComparisonOp(val value: Int) {
     Equal(0),
     NotEqual(1),
     GreaterThan(2),
@@ -19,7 +19,7 @@ public enum class EosComparisonOp(val value: Int) {
     MatchesRegex(12),
     Size(13);
 
-    public companion object {
+    companion object {
         internal fun fromValue(v: Int): EosComparisonOp = entries.getOrElse(v) { Equal }
     }
 }

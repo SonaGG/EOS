@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture
  * Sessions interface. Manages match-making sessions, including creation,
  * joining, player registration, invites, and search.
  */
-public class EosSessions internal constructor(private val platform: EosPlatform) {
+class EosSessions internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -42,7 +42,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
 
     // region Session lifecycle
 
-    public fun createSession(
+    fun createSession(
         sessionName: String,
         bucketId: String,
         maxPlayers: Int,
@@ -60,13 +60,13 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         CallbackStubs.release(stub.id)
         throw UnsupportedOperationException(
             "The EOS SDK has no EOS_Sessions_CreateSession function. Creating a session is a " +
-                "two-step flow: EOS_Sessions_CreateSessionModification to obtain an " +
-                "EOS_HSessionModification, configure it, then EOS_Sessions_UpdateSession to " +
-                "commit it. That modification-handle API is not yet bound in this library."
+                    "two-step flow: EOS_Sessions_CreateSessionModification to obtain an " +
+                    "EOS_HSessionModification, configure it, then EOS_Sessions_UpdateSession to " +
+                    "commit it. That modification-handle API is not yet bound in this library."
         )
     }
 
-    public fun updateSession(
+    fun updateSession(
         sessionName: String,
     ): CompletableFuture<CreateOrUpdateSessionResult> {
         val future = CompletableFuture<CreateOrUpdateSessionResult>()
@@ -89,7 +89,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun destroySession(sessionName: String): CompletableFuture<EosResult> {
+    fun destroySession(sessionName: String): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Sessions_DestroySessionCallbackInfo: ResultCode@0, ClientData@8
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -107,7 +107,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun joinSession(
+    fun joinSession(
         sessionName: String,
         sessionHandle: SessionHandle,
         localUserId: EpicAccountId? = null,
@@ -129,7 +129,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun startSession(sessionName: String): CompletableFuture<EosResult> {
+    fun startSession(sessionName: String): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Sessions_StartSessionCallbackInfo: ResultCode@0, ClientData@8
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -147,7 +147,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun endSession(sessionName: String): CompletableFuture<EosResult> {
+    fun endSession(sessionName: String): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Sessions_EndSessionCallbackInfo: ResultCode@0, ClientData@8
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -165,7 +165,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun registerPlayers(
+    fun registerPlayers(
         sessionName: String,
         players: List<ProductUserId>,
     ): CompletableFuture<RegisterPlayersResult> {
@@ -191,7 +191,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun unregisterPlayers(
+    fun unregisterPlayers(
         sessionName: String,
         players: List<ProductUserId>,
     ): CompletableFuture<RegisterPlayersResult> {
@@ -221,7 +221,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
 
     // region Invites
 
-    public fun sendInvite(
+    fun sendInvite(
         sessionName: String,
         localUserId: EpicAccountId,
         targetUserId: EpicAccountId,
@@ -243,7 +243,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun rejectInvite(
+    fun rejectInvite(
         sessionName: String,
         localUserId: EpicAccountId,
     ): CompletableFuture<EosResult> {
@@ -264,7 +264,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun queryInvites(localUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun queryInvites(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Sessions_QueryInvitesCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -282,7 +282,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun getInviteCount(localUserId: EpicAccountId): Int {
+    fun getInviteCount(localUserId: EpicAccountId): Int {
         val options = SessionsGetInviteCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -300,7 +300,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
      * writes into a caller-supplied buffer; it does not hand back a pointer. Called once with a
      * null buffer to learn the required length, then again to fill it.
      */
-    public fun getInviteIdByIndex(localUserId: EpicAccountId, index: Int): String? =
+    fun getInviteIdByIndex(localUserId: EpicAccountId, index: Int): String? =
         withCallArena { arena ->
             val options = SessionsGetInviteIdByIndexOptions(localUserId, index)
             val lengthPtr = arena.allocate(ValueLayout.JAVA_INT)
@@ -339,7 +339,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
 
     // endregion
 
-    public fun addNotifySessionInviteReceived(
+    fun addNotifySessionInviteReceived(
         callback: (SessionInviteReceivedInfo) -> Unit,
     ): NotificationHandle = addNotify(
         "EOS_Sessions_AddNotifySessionInviteReceived",
@@ -352,7 +352,7 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         callback(SessionInviteReceivedInfo(sessionId, fromUserId))
     }
 
-    public fun addNotifySessionInviteAccepted(
+    fun addNotifySessionInviteAccepted(
         callback: (SessionInviteAcceptedInfo) -> Unit,
     ): NotificationHandle = addNotify(
         "EOS_Sessions_AddNotifySessionInviteAccepted",
@@ -365,10 +365,10 @@ public class EosSessions internal constructor(private val platform: EosPlatform)
         callback(SessionInviteAcceptedInfo(sessionId, fromUserId, localUserId))
     }
 
-    public fun removeNotifySessionInviteReceived(handle: NotificationHandle) =
+    fun removeNotifySessionInviteReceived(handle: NotificationHandle) =
         unregisterNotify("EOS_Sessions_RemoveNotifySessionInviteReceived", handle)
 
-    public fun removeNotifySessionInviteAccepted(handle: NotificationHandle) =
+    fun removeNotifySessionInviteAccepted(handle: NotificationHandle) =
         unregisterNotify("EOS_Sessions_RemoveNotifySessionInviteAccepted", handle)
 
     private fun addNotify(

@@ -26,7 +26,7 @@ import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /** Friends interface for managing friend lists and invites. */
-public class EosFriends internal constructor(private val platform: EosPlatform) {
+class EosFriends internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -36,7 +36,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun queryFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         val stub = CallbackStubs.register(EosCallback { data ->
             // EOS_Friends_QueryFriendsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
@@ -54,7 +54,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun sendInvite(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun sendInvite(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         val stub = CallbackStubs.register(EosCallback { data ->
             // EOS_Friends_SendInviteCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
@@ -72,7 +72,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun acceptInvite(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun acceptInvite(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         val stub = CallbackStubs.register(EosCallback { data ->
             // EOS_Friends_AcceptInviteCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
@@ -90,7 +90,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun rejectInvite(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun rejectInvite(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         val stub = CallbackStubs.register(EosCallback { data ->
             // EOS_Friends_RejectInviteCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
@@ -108,7 +108,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun getFriendsCount(localUserId: EpicAccountId): Int {
+    fun getFriendsCount(localUserId: EpicAccountId): Int {
         val fn = Native.downcall(
             "EOS_Friends_GetFriendsCount",
             FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
@@ -116,7 +116,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return fn.invokeExact(handle(), localUserId.raw) as Int
     }
 
-    public fun getFriendAtIndex(localUserId: EpicAccountId, index: Int): EpicAccountId =
+    fun getFriendAtIndex(localUserId: EpicAccountId, index: Int): EpicAccountId =
         withCallArena { arena ->
             val options = FriendsGetFriendAtIndexOptions(localUserId, index)
             EpicAccountId(
@@ -129,7 +129,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
             )
         }
 
-    public fun getStatus(localUserId: EpicAccountId, targetUserId: EpicAccountId): EosFriendsStatus =
+    fun getStatus(localUserId: EpicAccountId, targetUserId: EpicAccountId): EosFriendsStatus =
         withCallArena { arena ->
             val options = FriendsGetStatusOptions(localUserId, targetUserId)
             EosFriendsStatus.fromValue(
@@ -142,7 +142,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
             )
         }
 
-    public fun addNotifyFriendsUpdate(
+    fun addNotifyFriendsUpdate(
         localUserId: EpicAccountId,
         callback: (FriendsUpdateInfo) -> Unit,
     ): NotificationHandle {
@@ -168,7 +168,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyFriendsUpdate(handle: NotificationHandle) {
+    fun removeNotifyFriendsUpdate(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_Friends_RemoveNotifyFriendsUpdate",
             listOf(handle(), handle.notificationId),
@@ -177,7 +177,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun getBlockedUsersCount(localUserId: EpicAccountId): Int {
+    fun getBlockedUsersCount(localUserId: EpicAccountId): Int {
         val fn = Native.downcall(
             "EOS_Friends_GetBlockedUsersCount",
             FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
@@ -185,7 +185,7 @@ public class EosFriends internal constructor(private val platform: EosPlatform) 
         return fn.invokeExact(handle(), localUserId.raw) as Int
     }
 
-    public fun getBlockedUserAtIndex(localUserId: EpicAccountId, index: Int): EpicAccountId =
+    fun getBlockedUserAtIndex(localUserId: EpicAccountId, index: Int): EpicAccountId =
         withCallArena { arena ->
             val options = FriendsGetBlockedUserAtIndexOptions(localUserId, index)
             EpicAccountId(

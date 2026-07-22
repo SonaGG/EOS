@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * The application state that the platform should treat the process as being in.
  */
-public enum class EosApplicationStatus(val value: Int) {
+enum class EosApplicationStatus(val value: Int) {
     /** Xbox only: the application has entered constrained mode. */
     BackgroundConstrained(0),
 
@@ -16,7 +16,7 @@ public enum class EosApplicationStatus(val value: Int) {
     /** The application is in the foreground. */
     Foreground(3);
 
-    public companion object {
-        public fun fromValue(v: Int): EosApplicationStatus = entries.firstOrNull { it.value == v } ?: Foreground
+    companion object {
+        fun fromValue(v: Int): EosApplicationStatus = entries.firstOrNull { it.value == v } ?: Foreground
     }
 }

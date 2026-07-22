@@ -9,7 +9,7 @@ import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
-internal class ModsModIdentifier(public val mod: ModIdentifier) : StructWriter {
+internal class ModsModIdentifier(val mod: ModIdentifier) : StructWriter {
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, API_LATEST)

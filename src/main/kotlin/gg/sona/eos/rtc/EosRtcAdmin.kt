@@ -19,7 +19,9 @@ import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
 import gg.sona.eos.common.ProductUserId
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -28,7 +30,7 @@ import java.util.concurrent.CompletableFuture
  * This interface is intended to be used from a trusted server process. The
  * server's platform options must have the appropriate client credentials.
  */
-public class EosRtcAdmin internal constructor(private val platform: EosPlatform) {
+class EosRtcAdmin internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -43,7 +45,7 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
      * ids to join a room. The returned tokens should be distributed to the
      * corresponding clients.
      */
-    public fun queryJoinRoomToken(
+    fun queryJoinRoomToken(
         localUserId: ProductUserId,
         roomName: String,
         targetUserIds: List<ProductUserId>,
@@ -81,7 +83,7 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
      * Fetches a user token by index. Call only inside the
      * [queryJoinRoomToken] completion callback.
      */
-    public fun copyUserTokenByIndex(queryId: Long, userTokenIndex: Int): RtcAdminUserToken? {
+    fun copyUserTokenByIndex(queryId: Long, userTokenIndex: Int): RtcAdminUserToken? {
         return withCallArena { arena ->
             val options = RtcAdminCopyUserTokenByIndexOptions(userTokenIndex, queryId)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -110,7 +112,7 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
         }
     }
 
-    public fun copyUserTokenByUserId(queryId: Long, targetUserId: ProductUserId): RtcAdminUserToken? {
+    fun copyUserTokenByUserId(queryId: Long, targetUserId: ProductUserId): RtcAdminUserToken? {
         return withCallArena { arena ->
             val options = RtcAdminCopyUserTokenByUserIdOptions(targetUserId.raw, queryId)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -138,7 +140,7 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
         }
     }
 
-    public fun kick(roomName: String, targetUserId: ProductUserId): CompletableFuture<EosResult> {
+    fun kick(roomName: String, targetUserId: ProductUserId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_RTCAdmin_KickCompleteCallbackInfo: ResultCode@0
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -156,7 +158,7 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun setParticipantHardMute(
+    fun setParticipantHardMute(
         roomName: String,
         targetUserId: ProductUserId,
         mute: Boolean,

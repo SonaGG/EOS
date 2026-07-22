@@ -1,9 +1,9 @@
 package gg.sona.eos.mods
 
-public class ModInfo(
-    public val type: String,
-    public val id: String,
-    public val name: String,
-    public val version: String,
-    public val enabled: Boolean,
+class ModInfo(
+    val type: String,
+    val id: String,
+    val name: String,
+    val version: String,
+    val enabled: Boolean,
 )

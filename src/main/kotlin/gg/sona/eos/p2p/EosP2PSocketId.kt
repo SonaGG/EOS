@@ -11,7 +11,7 @@ import java.lang.foreign.ValueLayout
  * 0-9, '-', '_', ' ', '+', '=', '.') and may be used as a secret to gate
  * which connections are accepted.
  */
-public class EosP2PSocketId(public val name: String) {
+class EosP2PSocketId(val name: String) {
     init {
         require(name.length in 0..32) { "P2P socket name must be 0-32 characters" }
     }
@@ -26,7 +26,7 @@ public class EosP2PSocketId(public val name: String) {
         return seg
     }
 
-    public companion object {
+    companion object {
         internal val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(0), ValueLayout.JAVA_BYTE
         ).withByteAlignment(1)

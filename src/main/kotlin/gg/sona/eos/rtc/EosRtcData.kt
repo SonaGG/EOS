@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture
  * The Data channel must be enabled when joining a room by setting
  * [EosRtcFlag.EnableDataChannel] in the [EosRtc.joinRoom] flags.
  */
-public class EosRtcData internal constructor(private val platform: EosPlatform) {
+class EosRtcData internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -47,7 +47,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
     }
 
     /** Send arbitrary data to all participants in a room. */
-    public fun sendData(
+    fun sendData(
         localUserId: ProductUserId,
         roomName: String,
         data: ByteArray,
@@ -68,7 +68,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         }
     }
 
-    public fun updateSending(
+    fun updateSending(
         localUserId: ProductUserId,
         roomName: String,
         dataEnabled: Boolean,
@@ -90,7 +90,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun updateReceiving(
+    fun updateReceiving(
         localUserId: ProductUserId,
         roomName: String,
         participantId: ProductUserId?,
@@ -113,7 +113,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun addNotifyDataReceived(
+    fun addNotifyDataReceived(
         localUserId: ProductUserId,
         roomName: String,
         callback: (DataReceivedInfo) -> Unit,
@@ -128,7 +128,8 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
             val bytes = if (dataPtr.address() == 0L || len == 0) ByteArray(0)
             else {
                 val arr = ByteArray(len)
-                MemorySegment.ofArray(arr).copyFrom(MemorySegment.ofAddress(dataPtr.address()).reinterpret(len.toLong()))
+                MemorySegment.ofArray(arr)
+                    .copyFrom(MemorySegment.ofAddress(dataPtr.address()).reinterpret(len.toLong()))
                 arr
             }
             val sender = ProductUserId(data.getInt64(40))
@@ -148,7 +149,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyDataReceived(handle: NotificationHandle) {
+    fun removeNotifyDataReceived(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTCData_RemoveNotifyDataReceived",
             listOf(handle(), handle.notificationId),
@@ -157,7 +158,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyParticipantUpdated(
+    fun addNotifyParticipantUpdated(
         localUserId: ProductUserId,
         roomName: String,
         callback: (RtcDataParticipantUpdatedInfo) -> Unit,
@@ -185,7 +186,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyParticipantUpdated(handle: NotificationHandle) {
+    fun removeNotifyParticipantUpdated(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTCData_RemoveNotifyParticipantUpdated",
             listOf(handle(), handle.notificationId),
@@ -194,7 +195,7 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         CallbackStubs.release(handle.callbackId)
     }
 
-    public companion object {
-        public const val MAX_PACKET_SIZE: Int = 1170
+    companion object {
+        const val MAX_PACKET_SIZE: Int = 1170
     }
 }

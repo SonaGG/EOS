@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * Online platform identifier returned by EOS for the current process.
  */
-public enum class EosOnlinePlatform {
+enum class EosOnlinePlatform {
     Unknown,
     Epic,
     Psn,
@@ -11,7 +11,7 @@ public enum class EosOnlinePlatform {
     XboxLive,
     Steam;
 
-    public companion object {
+    companion object {
         internal fun fromValue(v: Int): EosOnlinePlatform = when (v) {
             100 -> Epic
             1000 -> Psn

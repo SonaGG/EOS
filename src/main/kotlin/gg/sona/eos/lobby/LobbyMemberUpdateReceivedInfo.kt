@@ -1,3 +1,3 @@
 package gg.sona.eos.lobby
 
-public class LobbyMemberUpdateReceivedInfo(public val lobbyId: String)
+class LobbyMemberUpdateReceivedInfo(val lobbyId: String)

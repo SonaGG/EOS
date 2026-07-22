@@ -1,5 +1,6 @@
 package gg.sona.eos.common
 
+import gg.sona.eos.common.EpicAccountId.Companion.fromString
 import gg.sona.eos.internal.Native
 import gg.sona.eos.internal.allocCString
 import gg.sona.eos.internal.withCallArena
@@ -17,8 +18,8 @@ import java.lang.foreign.ValueLayout
  * The stringified representation is at most 32 bytes plus a null terminator.
  */
 @JvmInline
-public value class EpicAccountId(public val raw: Long) {
-    public fun isValid(): Boolean {
+value class EpicAccountId(val raw: Long) {
+    fun isValid(): Boolean {
         if (raw == 0L) return false
         val fn = Native.downcall(
             "EOS_EpicAccountId_IsValid",
@@ -27,9 +28,9 @@ public value class EpicAccountId(public val raw: Long) {
         return (fn.invokeExact(raw) as Int) != 0
     }
 
-    public override fun toString(): String = if (raw == 0L) "<invalid>" else toStringValue()
+    override fun toString(): String = if (raw == 0L) "<invalid>" else toStringValue()
 
-    public fun toStringValue(): String {
+    fun toStringValue(): String {
         if (raw == 0L) return ""
         return withCallArena { arena ->
             val sizePtr = arena.allocate(ValueLayout.JAVA_INT)
@@ -51,9 +52,9 @@ public value class EpicAccountId(public val raw: Long) {
         }
     }
 
-    public companion object {
+    companion object {
         /** Construct an [EpicAccountId] from a previously-serialized string. */
-        public fun fromString(value: String): EpicAccountId {
+        fun fromString(value: String): EpicAccountId {
             if (value.isEmpty()) return Invalid
             return withCallArena { arena ->
                 val fn = Native.downcall(
@@ -65,6 +66,6 @@ public value class EpicAccountId(public val raw: Long) {
         }
 
         /** The null/invalid sentinel. */
-        public val Invalid: EpicAccountId = EpicAccountId(0L)
+        val Invalid: EpicAccountId = EpicAccountId(0L)
     }
 }

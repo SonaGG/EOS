@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture
  * Kids Web Services interface (KWS). Wraps the SuperAwesome age-gate
  * integration.
  */
-public class EosKws internal constructor(private val platform: EosPlatform) {
+class EosKws internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -43,7 +43,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
      * Query the client's country and age permissions based on their IP.
      * Use this to decide whether to display the age gate.
      */
-    public fun queryAgeGate(): CompletableFuture<QueryAgeGateResult> {
+    fun queryAgeGate(): CompletableFuture<QueryAgeGateResult> {
         val future = CompletableFuture<QueryAgeGateResult>()
         // EOS_KWS_QueryAgeGateCallbackInfo: ResultCode@0, ClientData@8, CountryCode@16, AgeOfConsent@24
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -71,7 +71,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
      * Create a KWS user with date of birth and parent email. The user is
      * associated with the supplied [ProductUserId].
      */
-    public fun createUser(
+    fun createUser(
         localUserId: ProductUserId,
         dateOfBirth: String, // ISO 8601 YYYY-MM-DD
         parentEmail: String,
@@ -101,7 +101,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
     }
 
     /** Query the current permission state for a user. */
-    public fun queryPermissions(localUserId: ProductUserId): CompletableFuture<QueryPermissionsResult> {
+    fun queryPermissions(localUserId: ProductUserId): CompletableFuture<QueryPermissionsResult> {
         val future = CompletableFuture<QueryPermissionsResult>()
         // EOS_KWS_QueryPermissionsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, KWSUserId@24, DateOfBirth@32, bIsMinor@40, ParentEmail@48
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -137,7 +137,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
     }
 
     /** Update the parent email for a user. */
-    public fun updateParentEmail(
+    fun updateParentEmail(
         localUserId: ProductUserId,
         parentEmail: String,
     ): CompletableFuture<ProductUserId> {
@@ -166,7 +166,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
      * Request new permissions for a user. Each [permissionKeys] entry must
      * match a permission configured with KWS. Up to 16 keys may be requested.
      */
-    public fun requestPermissions(
+    fun requestPermissions(
         localUserId: ProductUserId,
         permissionKeys: List<String>,
     ): CompletableFuture<ProductUserId> {
@@ -195,7 +195,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
     }
 
     /** Get the number of cached permissions for a user. */
-    public fun getPermissionsCount(localUserId: ProductUserId): Int {
+    fun getPermissionsCount(localUserId: ProductUserId): Int {
         val options = KwsGetPermissionsCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -213,7 +213,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
      * owns a C-side allocation that is freed before the function returns;
      * only the Kotlin view is exposed.
      */
-    public fun copyPermissionByIndex(
+    fun copyPermissionByIndex(
         localUserId: ProductUserId,
         index: Int,
     ): KwsPermissionStatus? = withCallArena { arena ->
@@ -248,7 +248,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
      * Look up a cached permission by name. Returns null if the permission
      * is unknown for the user.
      */
-    public fun getPermissionByKey(
+    fun getPermissionByKey(
         localUserId: ProductUserId,
         key: String,
     ): EosKwsPermissionStatus? = withCallArena { arena ->
@@ -271,7 +271,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
      * passed to [removeNotifyPermissionsUpdateReceived] when no longer
      * needed.
      */
-    public fun addNotifyPermissionsUpdateReceived(
+    fun addNotifyPermissionsUpdateReceived(
         callback: (PermissionsUpdateInfo) -> Unit,
     ): NotificationHandle {
         // EOS_KWS_PermissionsUpdateReceivedCallbackInfo: ClientData@0, LocalUserId@8, KWSUserId@16, DateOfBirth@24, bIsMinor@32, ParentEmail@40
@@ -306,7 +306,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyPermissionsUpdateReceived(handle: NotificationHandle) {
+    fun removeNotifyPermissionsUpdateReceived(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_KWS_RemoveNotifyPermissionsUpdateReceived",
             listOf(handle(), handle.notificationId),
@@ -315,8 +315,8 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public companion object {
-        public const val MAX_PERMISSIONS: Int = 16
-        public const val MAX_PERMISSION_LENGTH: Int = 32
+    companion object {
+        const val MAX_PERMISSIONS: Int = 16
+        const val MAX_PERMISSION_LENGTH: Int = 32
     }
 }

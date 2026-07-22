@@ -1,7 +1,7 @@
 package gg.sona.eos.logging
 
 /** Category of an EOS log message. */
-public enum class EosLogCategory(val value: Int) {
+enum class EosLogCategory(val value: Int) {
     AllCategories(0x7fffffff),
     Core(0),
     Auth(1),
@@ -37,7 +37,7 @@ public enum class EosLogCategory(val value: Int) {
     CustomInvites(31),
     HTTP(41);
 
-    public companion object {
-        public fun fromValue(v: Int): EosLogCategory = entries.firstOrNull { it.value == v } ?: AllCategories
+    companion object {
+        fun fromValue(v: Int): EosLogCategory = entries.firstOrNull { it.value == v } ?: AllCategories
     }
 }

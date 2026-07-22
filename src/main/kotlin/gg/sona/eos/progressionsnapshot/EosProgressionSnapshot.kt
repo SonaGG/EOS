@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture
  *  3. [submitSnapshot] to upload
  *  4. [endSnapshot] to clean up
  */
-public class EosProgressionSnapshot internal constructor(private val platform: EosPlatform) {
+class EosProgressionSnapshot internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -49,7 +49,7 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
      * `EOS_ProgressionSnapshot_BeginSnapshot` reports the new id through a `uint32_t*` out
      * parameter; the return value is only the [EosResult].
      */
-    public fun beginSnapshot(
+    fun beginSnapshot(
         localUserId: ProductUserId,
         snapshotId: String? = null,
     ): Int? = withCallArena { arena ->
@@ -66,7 +66,7 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
         if (result == EosResult.Success) outSnapshotId.get(ValueLayout.JAVA_INT, 0) else null
     }
 
-    public fun addProgression(
+    fun addProgression(
         snapshotId: String? = null,
         statName: String,
         statValue: Int,
@@ -82,7 +82,7 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
         )
     }
 
-    public fun submitSnapshot(snapshotId: String? = null): CompletableFuture<EosResult> =
+    fun submitSnapshot(snapshotId: String? = null): CompletableFuture<EosResult> =
         asyncCall(
             "EOS_ProgressionSnapshot_SubmitSnapshot",
             ProgressionSnapshotSubmitSnapshotOptions(snapshotId),
@@ -110,7 +110,7 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
         return future
     }
 
-    public fun endSnapshot(snapshotId: String? = null): EosResult = withCallArena { arena ->
+    fun endSnapshot(snapshotId: String? = null): EosResult = withCallArena { arena ->
         val options = ProgressionSnapshotEndSnapshotOptions(snapshotId)
         EosResult.fromValue(
             Native.invoke(
@@ -122,7 +122,7 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
         )
     }
 
-    public fun deleteSnapshot(snapshotId: String, localUserId: ProductUserId): CompletableFuture<EosResult> =
+    fun deleteSnapshot(snapshotId: String, localUserId: ProductUserId): CompletableFuture<EosResult> =
         asyncCall(
             "EOS_ProgressionSnapshot_DeleteSnapshot",
             ProgressionSnapshotDeleteSnapshotOptions(localUserId, snapshotId),

@@ -22,15 +22,18 @@ internal class AntiCheatServerLogPlayerUseWeaponData(
         seg.setInt64(0, playerHandle.raw)
         val positionSeg = arena.allocate(
             MemoryLayout.structLayout(
-            ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
-        ))
+                ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
+            )
+        )
         positionSeg.set(ValueLayout.JAVA_FLOAT, 0, playerPosition.x)
         positionSeg.set(ValueLayout.JAVA_FLOAT, 4, playerPosition.y)
         positionSeg.set(ValueLayout.JAVA_FLOAT, 8, playerPosition.z)
         seg.setInt64(8, positionSeg.address())
-        val viewRotSeg = arena.allocate(MemoryLayout.structLayout(
-            ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
-        ))
+        val viewRotSeg = arena.allocate(
+            MemoryLayout.structLayout(
+                ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
+            )
+        )
         viewRotSeg.set(ValueLayout.JAVA_FLOAT, 0, playerViewRotation.w)
         viewRotSeg.set(ValueLayout.JAVA_FLOAT, 4, playerViewRotation.x)
         viewRotSeg.set(ValueLayout.JAVA_FLOAT, 8, playerViewRotation.y)

@@ -29,7 +29,7 @@ import java.lang.foreign.ValueLayout
  * (Steam, PSN, Xbox Live, etc.) so EOS can route friend/inventory/identity
  * calls appropriately.
  */
-public class EosIntegratedPlatform internal constructor(private val platform: EosPlatform) {
+class EosIntegratedPlatform internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -43,7 +43,7 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
      * Tell EOS about a user's login status on a third-party platform.
      * The actual login is performed by your integration code.
      */
-    public fun setUserLoginStatus(
+    fun setUserLoginStatus(
         localUserId: ProductUserId,
         integratedPlatform: String,
         loginStatus: EosIntegratedPlatformLoginStatus,
@@ -61,7 +61,7 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
         )
     }
 
-    public fun addNotifyUserLoginStatusChanged(
+    fun addNotifyUserLoginStatusChanged(
         callback: (UserLoginStatusChangedInfo) -> Unit,
     ): NotificationHandle {
         // EOS_IntegratedPlatform_UserLoginStatusChangedCallbackInfo: ClientData@0, PlatformType@8,
@@ -91,7 +91,7 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyUserLoginStatusChanged(handle: NotificationHandle) {
+    fun removeNotifyUserLoginStatusChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_IntegratedPlatform_RemoveNotifyUserLoginStatusChanged",
             listOf(handle(), handle.notificationId),
@@ -104,7 +104,7 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
      * Register a callback to be invoked before a user is logged out. This
      * allows the integration to clean up before the user is gone.
      */
-    public fun setUserPreLogoutCallback(
+    fun setUserPreLogoutCallback(
         callback: (UserPreLogoutInfo) -> Unit,
     ): NotificationHandle {
         // EOS_IntegratedPlatform_UserPreLogoutCallbackInfo: ClientData@0, PlatformType@8,
@@ -128,7 +128,7 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun clearUserPreLogoutCallback(handle: NotificationHandle) {
+    fun clearUserPreLogoutCallback(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_IntegratedPlatform_ClearUserPreLogoutCallback",
             listOf(handle(), handle.notificationId),
@@ -137,7 +137,7 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun finalizeDeferredUserLogout(localUserId: ProductUserId): EosResult =
+    fun finalizeDeferredUserLogout(localUserId: ProductUserId): EosResult =
         withCallArena { arena ->
             val options = IntegratedPlatformFinalizeDeferredUserLogoutOptions(localUserId)
             EosResult.fromValue(

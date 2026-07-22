@@ -1,7 +1,7 @@
 package gg.sona.eos.anticheat.client
 
 /** Type of a client-side integrity violation. */
-public enum class EosAntiCheatClientViolationType(val value: Int) {
+enum class EosAntiCheatClientViolationType(val value: Int) {
     Invalid(0),
     IntegrityCatalogNotFound(1),
     IntegrityCatalogError(2),
@@ -19,8 +19,8 @@ public enum class EosAntiCheatClientViolationType(val value: Int) {
     VirtualMachineNotAllowed(14),
     ForbiddenSystemConfiguration(15);
 
-    public companion object {
-        public fun fromValue(v: Int): EosAntiCheatClientViolationType =
+    companion object {
+        fun fromValue(v: Int): EosAntiCheatClientViolationType =
             entries.firstOrNull { it.value == v } ?: Invalid
     }
 }

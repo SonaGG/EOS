@@ -15,36 +15,14 @@
  */
 package gg.sona.eos.auth
 
-import gg.sona.eos.NotificationHandle
-import gg.sona.eos.internal.setInt8
-import gg.sona.eos.internal.setInt16
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.setFloat
-import gg.sona.eos.internal.setDouble
-import gg.sona.eos.internal.setBool
-import gg.sona.eos.internal.getInt8
-import gg.sona.eos.internal.getInt16
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.getFloat
-import gg.sona.eos.internal.getDouble
-import gg.sona.eos.internal.getBool
-
 import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
+import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.EosExternalCredentialType
 import gg.sona.eos.common.EosLoginStatus
 import gg.sona.eos.common.EpicAccountId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.StructWriter
-import gg.sona.eos.internal.allocCString
-import gg.sona.eos.internal.withCallArena
-import java.lang.foreign.Arena
+import gg.sona.eos.internal.*
 import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
@@ -52,7 +30,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Auth interface for Epic Account login and token management.
  */
-public class EosAuth internal constructor(private val platform: EosPlatform) {
+class EosAuth internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -67,7 +45,7 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
      * [EosAuthCredentialType] (e.g. [EosAuthCredentialType.Developer], [EosAuthCredentialType.RefreshToken],
      * [EosAuthCredentialType.ExternalAuth]).
      */
-    public fun login(
+    fun login(
         credentialType: EosAuthCredentialType,
         credentialId: String? = null,
         credentialToken: String? = null,
@@ -104,7 +82,7 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun logout(localUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun logout(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Auth_LogoutCallbackInfo: ResultCode@0
         val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
@@ -122,7 +100,7 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
     }
 
     /** Get the number of locally logged-in accounts. */
-    public fun getLoggedInAccountsCount(): Int {
+    fun getLoggedInAccountsCount(): Int {
         val fn = Native.downcall(
             "EOS_Auth_GetLoggedInAccountsCount",
             FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG)
@@ -131,7 +109,7 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
     }
 
     /** Get a logged-in account by index. */
-    public fun getLoggedInAccountByIndex(index: Int): EpicAccountId {
+    fun getLoggedInAccountByIndex(index: Int): EpicAccountId {
         val fn = Native.downcall(
             "EOS_Auth_GetLoggedInAccountByIndex",
             FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT)
@@ -139,7 +117,7 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
         return EpicAccountId(fn.invokeExact(handle(), index) as Long)
     }
 
-    public fun getLoginStatus(localUserId: EpicAccountId): EosLoginStatus {
+    fun getLoginStatus(localUserId: EpicAccountId): EosLoginStatus {
         val fn = Native.downcall(
             "EOS_Auth_GetLoginStatus",
             FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
@@ -147,7 +125,7 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
         return EosLoginStatus.fromValue(fn.invokeExact(handle(), localUserId.raw) as Int)
     }
 
-    public fun addNotifyLoginStatusChanged(
+    fun addNotifyLoginStatusChanged(
         callback: (LoginStatusChangedInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
@@ -171,7 +149,7 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyLoginStatusChanged(handle: NotificationHandle) {
+    fun removeNotifyLoginStatusChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_Auth_RemoveNotifyLoginStatusChanged",
             listOf(handle(), handle.notificationId),

@@ -20,11 +20,13 @@ import gg.sona.eos.EosResult
 import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.EpicAccountId
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /** Presence interface for online status and rich presence. */
-public class EosPresence internal constructor(private val platform: EosPlatform) {
+class EosPresence internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -34,7 +36,7 @@ public class EosPresence internal constructor(private val platform: EosPlatform)
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryPresence(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun queryPresence(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Presence_QueryPresenceCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -52,7 +54,7 @@ public class EosPresence internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun hasPresence(localUserId: EpicAccountId, targetUserId: EpicAccountId): Boolean =
+    fun hasPresence(localUserId: EpicAccountId, targetUserId: EpicAccountId): Boolean =
         withCallArena { arena ->
             val options = PresenceHasPresenceOptions(localUserId, targetUserId)
             Native.invoke(
@@ -63,7 +65,7 @@ public class EosPresence internal constructor(private val platform: EosPlatform)
             ) as Int != 0
         }
 
-    public fun addNotifyOnPresenceChanged(
+    fun addNotifyOnPresenceChanged(
         localUserId: EpicAccountId,
         callback: (PresenceChangedInfo) -> Unit,
     ): NotificationHandle {
@@ -87,7 +89,7 @@ public class EosPresence internal constructor(private val platform: EosPlatform)
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyOnPresenceChanged(handle: NotificationHandle) {
+    fun removeNotifyOnPresenceChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_Presence_RemoveNotifyOnPresenceChanged",
             listOf(handle(), handle.notificationId),

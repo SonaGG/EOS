@@ -2,8 +2,8 @@ package gg.sona.eos.sessions
 
 import gg.sona.eos.EosResult
 
-public class RegisterPlayersResult(
-    public val result: EosResult,
-    public val sessionName: String,
-    public val affectedCount: Int,
+class RegisterPlayersResult(
+    val result: EosResult,
+    val sessionName: String,
+    val affectedCount: Int,
 )

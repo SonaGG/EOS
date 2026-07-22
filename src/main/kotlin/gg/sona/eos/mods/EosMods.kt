@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Mods interface. Manages mod installation, updates, and enumeration.
  */
-public class EosMods internal constructor(private val platform: EosPlatform) {
+class EosMods internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -37,7 +37,7 @@ public class EosMods internal constructor(private val platform: EosPlatform) {
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun installMod(
+    fun installMod(
         localUserId: ProductUserId,
         mod: ModIdentifier,
     ): CompletableFuture<EosResult> = asyncCall(
@@ -45,7 +45,7 @@ public class EosMods internal constructor(private val platform: EosPlatform) {
         ModsInstallModOptions(localUserId, mod),
     )
 
-    public fun uninstallMod(
+    fun uninstallMod(
         localUserId: ProductUserId,
         mod: ModIdentifier,
     ): CompletableFuture<EosResult> = asyncCall(
@@ -53,7 +53,7 @@ public class EosMods internal constructor(private val platform: EosPlatform) {
         ModsUninstallModOptions(localUserId, mod),
     )
 
-    public fun enumerateMods(
+    fun enumerateMods(
         localUserId: ProductUserId,
         type: EosModEnumerationType = EosModEnumerationType.RecentlyInstalled,
     ): CompletableFuture<EosResult> = asyncCall(
@@ -94,13 +94,13 @@ public class EosMods internal constructor(private val platform: EosPlatform) {
         "EOS_Mods_GetModCount does not exist in the EOS SDK; use copyModInfo() and read its count.",
         level = DeprecationLevel.ERROR,
     )
-    public fun getModCount(localUserId: ProductUserId): Int =
+    fun getModCount(localUserId: ProductUserId): Int =
         throw UnsupportedOperationException(
             "The EOS SDK has no EOS_Mods_GetModCount function. Call EOS_Mods_CopyModInfo " +
-                "(via copyModInfo) and read the mod count from the returned EOS_Mods_ModInfo."
+                    "(via copyModInfo) and read the mod count from the returned EOS_Mods_ModInfo."
         )
 
-    public fun copyModInfoByIndex(
+    fun copyModInfoByIndex(
         localUserId: ProductUserId,
         index: Int,
     ): ModInfo? = withCallArena { arena ->
@@ -125,7 +125,7 @@ public class EosMods internal constructor(private val platform: EosPlatform) {
         info
     }
 
-    public fun updateMod(
+    fun updateMod(
         localUserId: ProductUserId,
         mod: ModIdentifier,
     ): CompletableFuture<EosResult> = asyncCall(

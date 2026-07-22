@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture
  * Stats interface. Ingest arbitrary integer stats for a player and query
  * them back later.
  */
-public class EosStats internal constructor(private val platform: EosPlatform) {
+class EosStats internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -42,7 +42,7 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
      * Ingest one or more stats. Up to 3000 stats may be ingested in a single
      * call.
      */
-    public fun ingestStat(
+    fun ingestStat(
         localUserId: ProductUserId?,
         targetUserId: ProductUserId,
         stats: List<IngestStat>,
@@ -74,7 +74,7 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
      * Query cached stats for a user. Returns a list of [PlayerStat] after
      * the operation completes successfully.
      */
-    public fun queryStats(
+    fun queryStats(
         localUserId: ProductUserId?,
         targetUserId: ProductUserId,
         statNames: List<String>? = null,
@@ -101,7 +101,7 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun getStatsCount(targetUserId: ProductUserId): Int {
+    fun getStatsCount(targetUserId: ProductUserId): Int {
         val options = StatsGetStatsCountOptions(targetUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -114,7 +114,7 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun copyStatByIndex(targetUserId: ProductUserId, index: Int): PlayerStat? =
+    fun copyStatByIndex(targetUserId: ProductUserId, index: Int): PlayerStat? =
         withCallArena { arena ->
             val options = StatsCopyStatByIndexOptions(targetUserId, index)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -137,7 +137,7 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
             stat
         }
 
-    public fun copyStatByName(targetUserId: ProductUserId, name: String): PlayerStat? =
+    fun copyStatByName(targetUserId: ProductUserId, name: String): PlayerStat? =
         withCallArena { arena ->
             val options = StatsCopyStatByNameOptions(targetUserId, name)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -172,9 +172,9 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public companion object {
-        public const val MAX_INGEST_STATS: Int = 3000
-        public const val MAX_QUERY_STATS: Int = 1000
-        public const val TIME_UNDEFINED: Long = -1L
+    companion object {
+        const val MAX_INGEST_STATS: Int = 3000
+        const val MAX_QUERY_STATS: Int = 1000
+        const val TIME_UNDEFINED: Long = -1L
     }
 }

@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Reports interface. Submit player-behavior reports.
  */
-public class EosReports internal constructor(private val platform: EosPlatform) {
+class EosReports internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -46,7 +46,7 @@ public class EosReports internal constructor(private val platform: EosPlatform) 
      * @param comments free-form text describing the behavior
      * @param contextBlob arbitrary additional context (may be empty)
      */
-    public fun sendPlayerBehaviorReport(
+    fun sendPlayerBehaviorReport(
         reporterUserId: ProductUserId,
         reportedUserId: ProductUserId,
         reasonCategory: String,

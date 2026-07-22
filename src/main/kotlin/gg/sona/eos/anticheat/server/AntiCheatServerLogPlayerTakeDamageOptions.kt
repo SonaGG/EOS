@@ -56,8 +56,9 @@ internal class AntiCheatServerLogPlayerTakeDamageOptions(
     private fun writeVec3(arena: Arena, v: EosAntiCheatCommon.Vec3f): MemorySegment {
         val seg = arena.allocate(
             MemoryLayout.structLayout(
-            ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
-        ))
+                ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
+            )
+        )
         seg.set(ValueLayout.JAVA_FLOAT, 0, v.x)
         seg.set(ValueLayout.JAVA_FLOAT, 4, v.y)
         seg.set(ValueLayout.JAVA_FLOAT, 8, v.z)
@@ -65,9 +66,11 @@ internal class AntiCheatServerLogPlayerTakeDamageOptions(
     }
 
     private fun writeQuat(arena: Arena, q: EosAntiCheatCommon.Quat): MemorySegment {
-        val seg = arena.allocate(MemoryLayout.structLayout(
-            ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
-        ))
+        val seg = arena.allocate(
+            MemoryLayout.structLayout(
+                ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
+            )
+        )
         seg.set(ValueLayout.JAVA_FLOAT, 0, q.w)
         seg.set(ValueLayout.JAVA_FLOAT, 4, q.x)
         seg.set(ValueLayout.JAVA_FLOAT, 8, q.y)

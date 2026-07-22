@@ -27,7 +27,7 @@ import java.lang.foreign.ValueLayout
  * Metrics interface. Used to inform the backend about the start and end of
  * a player's session for analytics.
  */
-public class EosMetrics internal constructor(private val platform: EosPlatform) {
+class EosMetrics internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -37,7 +37,7 @@ public class EosMetrics internal constructor(private val platform: EosPlatform) 
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun beginPlayerSession(
+    fun beginPlayerSession(
         localUserId: ProductUserId? = null,
         displayName: String? = null,
         controllerType: EosMetricsControllerType = EosMetricsControllerType.Unknown,
@@ -56,7 +56,7 @@ public class EosMetrics internal constructor(private val platform: EosPlatform) 
         )
     }
 
-    public fun endPlayerSession(
+    fun endPlayerSession(
         localUserId: ProductUserId? = null,
     ): EosResult = withCallArena { arena ->
         val options = MetricsEndPlayerSessionOptions(localUserId)

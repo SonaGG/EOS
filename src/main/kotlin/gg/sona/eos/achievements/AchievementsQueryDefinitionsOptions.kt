@@ -2,7 +2,8 @@ package gg.sona.eos.achievements
 
 import gg.sona.eos.common.ProductUserId
 import gg.sona.eos.internal.StructWriter
-import gg.sona.eos.internal.*
+import gg.sona.eos.internal.setInt32
+import gg.sona.eos.internal.setInt64
 import java.lang.foreign.Arena
 import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment

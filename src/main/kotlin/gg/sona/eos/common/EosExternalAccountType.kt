@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * External account provider identifiers supported by EOS.
  */
-public enum class EosExternalAccountType {
+enum class EosExternalAccountType {
     Epic,
     Steam,
     Psn,
@@ -20,7 +20,7 @@ public enum class EosExternalAccountType {
     Amazon,
     Viveport;
 
-    public companion object {
+    companion object {
         internal fun fromValue(v: Int): EosExternalAccountType = entries.getOrElse(v) { Epic }
     }
 }

@@ -21,14 +21,16 @@ import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.EpicAccountId
 import gg.sona.eos.common.ProductUserId
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /**
  * Lobby interface. Manages persistent multiplayer lobbies with built-in
  * support for voice chat, presence, and invites.
  */
-public class EosLobby internal constructor(private val platform: EosPlatform) {
+class EosLobby internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -38,7 +40,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun createLobby(
+    fun createLobby(
         lobbyId: String,
         maxPlayers: Int,
         localUserId: EpicAccountId? = null,
@@ -65,7 +67,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun destroyLobby(lobbyId: String, localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
+    fun destroyLobby(lobbyId: String, localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Lobby_DestroyLobbyCallbackInfo: ResultCode@0, ClientData@8, LobbyId@16
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -83,7 +85,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun joinLobby(
+    fun joinLobby(
         lobbyId: String,
         localUserId: EpicAccountId? = null,
         presenceEnabled: Boolean = true,
@@ -105,7 +107,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun leaveLobby(lobbyId: String, localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
+    fun leaveLobby(lobbyId: String, localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Lobby_LeaveLobbyCallbackInfo: ResultCode@0, ClientData@8, LobbyId@16
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -123,7 +125,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun updateLobby(
+    fun updateLobby(
         lobbyId: String,
         localUserId: EpicAccountId? = null,
     ): CompletableFuture<EosResult> {
@@ -143,7 +145,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun promoteMember(
+    fun promoteMember(
         lobbyId: String,
         targetUserId: ProductUserId,
         localUserId: EpicAccountId? = null,
@@ -164,7 +166,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun kickMember(
+    fun kickMember(
         lobbyId: String,
         targetUserId: ProductUserId,
         localUserId: EpicAccountId? = null,
@@ -185,7 +187,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun hardMuteMember(
+    fun hardMuteMember(
         lobbyId: String,
         targetUserId: ProductUserId,
         hardMute: Boolean,
@@ -207,7 +209,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun getRTCRoomName(lobbyId: String): String? = withCallArena { arena ->
+    fun getRTCRoomName(lobbyId: String): String? = withCallArena { arena ->
         val sizePtr = arena.allocate(ValueLayout.JAVA_INT)
         val ptr = arena.allocate(ValueLayout.ADDRESS)
         // First call: pass NULL to get the required size.
@@ -235,7 +237,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         buf.reinterpret(Long.MAX_VALUE).getString(0)
     }
 
-    public fun sendInvite(
+    fun sendInvite(
         lobbyId: String,
         targetUserId: EpicAccountId,
         localUserId: EpicAccountId? = null,
@@ -256,7 +258,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun rejectInvite(lobbyId: String, localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
+    fun rejectInvite(lobbyId: String, localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         val stub = CallbackStubs.register(EosCallback { data ->
             future.complete(EosResult.fromValue(data.getInt32(0)))
@@ -273,7 +275,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun queryInvites(localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
+    fun queryInvites(localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         val stub = CallbackStubs.register(EosCallback { data ->
             future.complete(EosResult.fromValue(data.getInt32(0)))
@@ -290,7 +292,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun getInviteCount(localUserId: EpicAccountId? = null): Int {
+    fun getInviteCount(localUserId: EpicAccountId? = null): Int {
         val options = LobbyGetInviteCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -303,7 +305,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun addNotifyLobbyUpdateReceived(
+    fun addNotifyLobbyUpdateReceived(
         callback: (LobbyUpdateReceivedInfo) -> Unit,
     ): NotificationHandle = addNotify(
         "EOS_Lobby_AddNotifyLobbyUpdateReceived",
@@ -313,7 +315,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         callback(LobbyUpdateReceivedInfo(lobbyId))
     }
 
-    public fun addNotifyLobbyMemberUpdateReceived(
+    fun addNotifyLobbyMemberUpdateReceived(
         callback: (LobbyMemberUpdateReceivedInfo) -> Unit,
     ): NotificationHandle = addNotify(
         "EOS_Lobby_AddNotifyLobbyMemberUpdateReceived",
@@ -323,7 +325,7 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         callback(LobbyMemberUpdateReceivedInfo(lobbyId))
     }
 
-    public fun addNotifyLobbyMemberStatusReceived(
+    fun addNotifyLobbyMemberStatusReceived(
         callback: (LobbyMemberStatusReceivedInfo) -> Unit,
     ): NotificationHandle = addNotify(
         "EOS_Lobby_AddNotifyLobbyMemberStatusReceived",
@@ -336,13 +338,13 @@ public class EosLobby internal constructor(private val platform: EosPlatform) {
         callback(LobbyMemberStatusReceivedInfo(lobbyId, targetUserId, currentStatus, previousStatus))
     }
 
-    public fun removeNotifyLobbyUpdateReceived(handle: NotificationHandle) =
+    fun removeNotifyLobbyUpdateReceived(handle: NotificationHandle) =
         unregisterNotify("EOS_Lobby_RemoveNotifyLobbyUpdateReceived", handle)
 
-    public fun removeNotifyLobbyMemberUpdateReceived(handle: NotificationHandle) =
+    fun removeNotifyLobbyMemberUpdateReceived(handle: NotificationHandle) =
         unregisterNotify("EOS_Lobby_RemoveNotifyLobbyMemberUpdateReceived", handle)
 
-    public fun removeNotifyLobbyMemberStatusReceived(handle: NotificationHandle) =
+    fun removeNotifyLobbyMemberStatusReceived(handle: NotificationHandle) =
         unregisterNotify("EOS_Lobby_RemoveNotifyLobbyMemberStatusReceived", handle)
 
     private fun addNotify(

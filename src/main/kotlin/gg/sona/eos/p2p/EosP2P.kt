@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture
  * between users, with NAT punching and Epic relay fallback. Up to 32 socket
  * ids can be opened with a single remote user.
  */
-public class EosP2P internal constructor(private val platform: EosPlatform) {
+class EosP2P internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -45,7 +45,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
      * the fly. An [EosResult.Success] only means the packet was queued for
      * sending, not that it was actually delivered.
      */
-    public fun sendPacket(
+    fun sendPacket(
         localUserId: ProductUserId,
         remoteUserId: ProductUserId,
         socketId: EosP2PSocketId,
@@ -80,7 +80,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
      * Get the size of the next packet waiting to be received for the given
      * user. Returns null if no packet is available.
      */
-    public fun getNextReceivedPacketSize(
+    fun getNextReceivedPacketSize(
         localUserId: ProductUserId,
         channel: Int? = null,
     ): Int? = withCallArena { arena ->
@@ -103,7 +103,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
      * Receive the next packet for the local user. Returns null if no packet
      * is available.
      */
-    public fun receivePacket(
+    fun receivePacket(
         localUserId: ProductUserId,
         maxDataSize: Int = MAX_PACKET_SIZE,
         channel: Int? = null,
@@ -118,8 +118,10 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             Native.invoke(
                 "EOS_P2P_ReceivePacket",
                 listOf(handle(), options.writeTo(arena), peerIdPtr, socketIdPtr, channelPtr, dataBuf, bytesWrittenPtr),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
-                    ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(
+                    ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS
+                ),
                 ValueLayout.JAVA_INT,
             ) as Int
         )
@@ -131,7 +133,8 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         val receivedChannel = channelPtr.get(ValueLayout.JAVA_BYTE, 0).toInt() and 0xff
         val bytesWritten = bytesWrittenPtr.get(ValueLayout.JAVA_INT, 0)
         val bytes = ByteArray(bytesWritten)
-        MemorySegment.ofArray(bytes).copyFrom(MemorySegment.ofAddress(dataBuf.address()).reinterpret(bytesWritten.toLong()))
+        MemorySegment.ofArray(bytes)
+            .copyFrom(MemorySegment.ofAddress(dataBuf.address()).reinterpret(bytesWritten.toLong()))
         P2PReceivedPacket(peerId, EosP2PSocketId(socketName), receivedChannel, bytes)
     }
 
@@ -139,7 +142,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
      * Accept (or request) a connection with a peer. Subsequent packets to that
      * peer on the same socket will flow without further accept calls.
      */
-    public fun acceptConnection(
+    fun acceptConnection(
         localUserId: ProductUserId,
         remoteUserId: ProductUserId,
         socketId: EosP2PSocketId,
@@ -161,7 +164,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
      * connection has other open sockets, the underlying physical socket is
      * preserved.
      */
-    public fun closeConnection(
+    fun closeConnection(
         localUserId: ProductUserId,
         remoteUserId: ProductUserId,
         socketId: EosP2PSocketId,
@@ -178,7 +181,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public fun closeConnections(localUserId: ProductUserId, socketId: EosP2PSocketId): EosResult =
+    fun closeConnections(localUserId: ProductUserId, socketId: EosP2PSocketId): EosResult =
         withCallArena { arena ->
             val socketSeg = socketId.writeTo(arena)
             val options = P2PCloseConnectionsOptions(localUserId, socketSeg)
@@ -192,7 +195,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             )
         }
 
-    public fun queryNATType(): CompletableFuture<QueryNatTypeResult> {
+    fun queryNATType(): CompletableFuture<QueryNatTypeResult> {
         val future = CompletableFuture<QueryNatTypeResult>()
         // EOS_P2P_OnQueryNATTypeCompleteInfo: ResultCode@0, ClientData@8, NATType@16
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -212,7 +215,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun getNATType(): EosNatType? = withCallArena { arena ->
+    fun getNATType(): EosNatType? = withCallArena { arena ->
         val outPtr = arena.allocate(ValueLayout.JAVA_INT)
         val options = P2PGetNATTypeOptions()
         val result = EosResult.fromValue(
@@ -226,7 +229,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         if (result != EosResult.Success) null else EosNatType.fromValue(outPtr.get(ValueLayout.JAVA_INT, 0))
     }
 
-    public fun setRelayControl(relayControl: EosRelayControl): EosResult = withCallArena { arena ->
+    fun setRelayControl(relayControl: EosRelayControl): EosResult = withCallArena { arena ->
         val options = P2PSetRelayControlOptions(relayControl)
         EosResult.fromValue(
             Native.invoke(
@@ -238,7 +241,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public fun getRelayControl(): EosRelayControl = withCallArena { arena ->
+    fun getRelayControl(): EosRelayControl = withCallArena { arena ->
         val outPtr = arena.allocate(ValueLayout.JAVA_INT)
         val options = P2PGetRelayControlOptions()
         EosResult.fromValue(
@@ -252,7 +255,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         EosRelayControl.fromValue(outPtr.get(ValueLayout.JAVA_INT, 0))
     }
 
-    public fun setPortRange(port: Int, additionalPorts: Int): EosResult = withCallArena { arena ->
+    fun setPortRange(port: Int, additionalPorts: Int): EosResult = withCallArena { arena ->
         val options = P2PSetPortRangeOptions(port.toShort(), additionalPorts.toShort())
         EosResult.fromValue(
             Native.invoke(
@@ -264,7 +267,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public fun getPortRange(): PortRange = withCallArena { arena ->
+    fun getPortRange(): PortRange = withCallArena { arena ->
         val portPtr = arena.allocate(ValueLayout.JAVA_SHORT)
         val additionalPtr = arena.allocate(ValueLayout.JAVA_SHORT)
         val options = P2PGetPortRangeOptions()
@@ -276,11 +279,13 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
                 ValueLayout.JAVA_INT,
             ) as Int
         )
-        PortRange(portPtr.get(ValueLayout.JAVA_SHORT, 0).toInt() and 0xffff,
-                  additionalPtr.get(ValueLayout.JAVA_SHORT, 0).toInt() and 0xffff)
+        PortRange(
+            portPtr.get(ValueLayout.JAVA_SHORT, 0).toInt() and 0xffff,
+            additionalPtr.get(ValueLayout.JAVA_SHORT, 0).toInt() and 0xffff
+        )
     }
 
-    public fun setPacketQueueSize(incomingMaxBytes: Long, outgoingMaxBytes: Long): EosResult =
+    fun setPacketQueueSize(incomingMaxBytes: Long, outgoingMaxBytes: Long): EosResult =
         withCallArena { arena ->
             val options = P2PSetPacketQueueSizeOptions(incomingMaxBytes, outgoingMaxBytes)
             EosResult.fromValue(
@@ -293,7 +298,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             )
         }
 
-    public fun getPacketQueueInfo(): PacketQueueInfo = withCallArena { arena ->
+    fun getPacketQueueInfo(): PacketQueueInfo = withCallArena { arena ->
         val outPtr = arena.allocate(PacketQueueInfo.LAYOUT)
         val options = P2PGetPacketQueueInfoOptions()
         EosResult.fromValue(
@@ -314,7 +319,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public fun addNotifyPeerConnectionRequest(
+    fun addNotifyPeerConnectionRequest(
         localUserId: ProductUserId,
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionRequestInfo) -> Unit,
@@ -342,7 +347,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyPeerConnectionRequest(handle: NotificationHandle) {
+    fun removeNotifyPeerConnectionRequest(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_P2P_RemoveNotifyPeerConnectionRequest",
             listOf(handle(), handle.notificationId),
@@ -351,7 +356,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyPeerConnectionEstablished(
+    fun addNotifyPeerConnectionEstablished(
         localUserId: ProductUserId,
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionEstablishedInfo) -> Unit,
@@ -365,7 +370,15 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
                 socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
             val type = EosConnectionEstablishedType.fromValue(data.getInt32(32))
             val netType = EosNetworkConnectionType.fromValue(data.getInt32(36))
-            callback(PeerConnectionEstablishedInfo(localUserId, remoteUserId, EosP2PSocketId(socketName), type, netType))
+            callback(
+                PeerConnectionEstablishedInfo(
+                    localUserId,
+                    remoteUserId,
+                    EosP2PSocketId(socketName),
+                    type,
+                    netType
+                )
+            )
         }
         val handle = CallbackStubs.register(invoker)
         val options = P2PAddNotifyPeerConnectionEstablishedOptions(localUserId, socketId)
@@ -381,7 +394,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyPeerConnectionEstablished(handle: NotificationHandle) {
+    fun removeNotifyPeerConnectionEstablished(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_P2P_RemoveNotifyPeerConnectionEstablished",
             listOf(handle(), handle.notificationId),
@@ -390,7 +403,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyPeerConnectionInterrupted(
+    fun addNotifyPeerConnectionInterrupted(
         localUserId: ProductUserId,
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionInterruptedInfo) -> Unit,
@@ -418,7 +431,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyPeerConnectionInterrupted(handle: NotificationHandle) {
+    fun removeNotifyPeerConnectionInterrupted(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_P2P_RemoveNotifyPeerConnectionInterrupted",
             listOf(handle(), handle.notificationId),
@@ -427,7 +440,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyPeerConnectionClosed(
+    fun addNotifyPeerConnectionClosed(
         localUserId: ProductUserId,
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionClosedInfo) -> Unit,
@@ -456,7 +469,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyPeerConnectionClosed(handle: NotificationHandle) {
+    fun removeNotifyPeerConnectionClosed(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_P2P_RemoveNotifyPeerConnectionClosed",
             listOf(handle(), handle.notificationId),
@@ -465,7 +478,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyIncomingPacketQueueFull(
+    fun addNotifyIncomingPacketQueueFull(
         callback: (IncomingPacketQueueFullInfo) -> Unit,
     ): NotificationHandle {
         // EOS_P2P_OnIncomingPacketQueueFullInfo: ClientData@0, PacketQueueMaxSizeBytes@8, PacketQueueCurrentSizeBytes@16, OverflowPacketLocalUserId@24, OverflowPacketChannel@32, OverflowPacketSizeBytes@36
@@ -491,7 +504,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyIncomingPacketQueueFull(handle: NotificationHandle) {
+    fun removeNotifyIncomingPacketQueueFull(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_P2P_RemoveNotifyIncomingPacketQueueFull",
             listOf(handle(), handle.notificationId),
@@ -500,7 +513,7 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun clearPacketQueue(
+    fun clearPacketQueue(
         localUserId: ProductUserId,
         remoteUserId: ProductUserId,
         socketId: EosP2PSocketId?,
@@ -517,10 +530,10 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public companion object {
-        public const val MAX_PACKET_SIZE: Int = 1170
-        public const val MAX_CONNECTIONS: Int = 32
-        public const val SOCKET_NAME_SIZE: Int = 33
-        public const val MAX_QUEUE_SIZE_UNLIMITED: Long = 0L
+    companion object {
+        const val MAX_PACKET_SIZE: Int = 1170
+        const val MAX_CONNECTIONS: Int = 32
+        const val SOCKET_NAME_SIZE: Int = 33
+        const val MAX_QUEUE_SIZE_UNLIMITED: Long = 0L
     }
 }

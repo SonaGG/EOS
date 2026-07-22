@@ -19,13 +19,15 @@ import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
 import gg.sona.eos.common.EpicAccountId
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /**
  * Title Storage interface. Game-wide shared cloud files (not per-user).
  */
-public class EosTitleStorage internal constructor(private val platform: EosPlatform) {
+class EosTitleStorage internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -35,7 +37,7 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryFile(
+    fun queryFile(
         localUserId: EpicAccountId,
         filename: String,
     ): CompletableFuture<EosResult> {
@@ -56,7 +58,7 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
         return future
     }
 
-    public fun queryFileList(localUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun queryFileList(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_TitleStorage_QueryFileListCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, FileCount@24
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -74,7 +76,7 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
         return future
     }
 
-    public fun getFileMetadataCount(localUserId: EpicAccountId): Int {
+    fun getFileMetadataCount(localUserId: EpicAccountId): Int {
         val options = TitleStorageGetFileMetadataCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -87,7 +89,7 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
         }
     }
 
-    public fun copyFileMetadataByFilename(
+    fun copyFileMetadataByFilename(
         localUserId: EpicAccountId,
         filename: String,
     ): TitleStorageFileMetadata? = copyMetadata(
@@ -95,7 +97,7 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
         TitleStorageCopyFileMetadataByFilenameOptions(localUserId, filename)
     )
 
-    public fun copyFileMetadataAtIndex(
+    fun copyFileMetadataAtIndex(
         localUserId: EpicAccountId,
         index: Int,
     ): TitleStorageFileMetadata? = copyMetadata(
@@ -130,7 +132,7 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
             meta
         }
 
-    public fun deleteCache(localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
+    fun deleteCache(localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_TitleStorage_DeleteCacheCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->

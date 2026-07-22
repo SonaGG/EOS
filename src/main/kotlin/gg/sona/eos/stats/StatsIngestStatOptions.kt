@@ -18,9 +18,11 @@ internal class StatsIngestStatOptions(
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, API_LATEST)
         seg.setInt64(8, localUserId?.raw ?: 0L)
-        val dataSegs = stats.map { (it.statName to it.amount).let { (n, a) ->
-            StatsIngestData(n, a).writeTo(arena)
-        } }
+        val dataSegs = stats.map {
+            (it.statName to it.amount).let { (n, a) ->
+                StatsIngestData(n, a).writeTo(arena)
+            }
+        }
         val arr = arena.allocate(StatsIngestData.LAYOUT, dataSegs.size.toLong())
         dataSegs.forEachIndexed { i, s ->
             val dst = arr.asSlice(i.toLong() * StatsIngestData.LAYOUT.byteSize(), StatsIngestData.LAYOUT.byteSize())

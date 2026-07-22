@@ -22,8 +22,6 @@ import gg.sona.eos.common.EosExternalCredentialType
 import gg.sona.eos.common.ProductUserId
 import gg.sona.eos.logging.EosLogCategory
 import gg.sona.eos.logging.EosLogLevel
-import gg.sona.eos.logging.EosLogMessage
-import gg.sona.eos.logging.EosLogMessageFunc
 import gg.sona.eos.logging.EosLogging
 import gg.sona.eos.p2p.EosP2PSocketId
 import gg.sona.eos.p2p.EosPacketReliability
@@ -153,6 +151,7 @@ object SampleUsage {
             when (info.status) {
                 EosRtcParticipantStatus.Joined ->
                     println("User ${info.participantId} joined room ${info.roomName}")
+
                 EosRtcParticipantStatus.Left ->
                     println("User ${info.participantId} left room ${info.roomName}")
             }
@@ -230,8 +229,8 @@ object SampleUsage {
         // Log a player tick.
         platform.antiCheatServer.logPlayerTick(
             playerHandle = playerHandle,
-            position = gg.sona.eos.anticheat.common.EosAntiCheatCommon.Vec3f(0f, 0f, 100f),
-            viewRotation = gg.sona.eos.anticheat.common.EosAntiCheatCommon.Quat(1f, 0f, 0f, 0f),
+            position = EosAntiCheatCommon.Vec3f(0f, 0f, 100f),
+            viewRotation = EosAntiCheatCommon.Quat(1f, 0f, 0f, 0f),
             isViewZoomed = false,
             health = 100f,
         )

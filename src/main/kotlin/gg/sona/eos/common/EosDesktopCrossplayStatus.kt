@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * Status of desktop crossplay functionality on Windows.
  */
-public enum class EosDesktopCrossplayStatus(val value: Int) {
+enum class EosDesktopCrossplayStatus(val value: Int) {
     /** Desktop crossplay is ready to use. */
     Ok(0),
 
@@ -31,8 +31,8 @@ public enum class EosDesktopCrossplayStatus(val value: Int) {
     /** The overlay failed to load. */
     OverlayLoadFailed(8);
 
-    public companion object {
-        public fun fromValue(v: Int): EosDesktopCrossplayStatus =
+    companion object {
+        fun fromValue(v: Int): EosDesktopCrossplayStatus =
             entries.firstOrNull { it.value == v } ?: Ok
     }
 }

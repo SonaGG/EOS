@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * Identity provider used to authenticate a user.
  */
-public enum class EosExternalCredentialType(val value: Int) {
+enum class EosExternalCredentialType(val value: Int) {
     Epic(0),
     SteamAppTicket(1),
     PsnIdToken(2),
@@ -25,7 +25,7 @@ public enum class EosExternalCredentialType(val value: Int) {
     SteamSessionTicket(18),
     ViveportUserToken(19);
 
-    public companion object {
+    companion object {
         internal fun fromValue(v: Int): EosExternalCredentialType = entries.firstOrNull { it.value == v } ?: Epic
     }
 }

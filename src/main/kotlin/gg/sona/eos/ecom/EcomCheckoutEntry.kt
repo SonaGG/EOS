@@ -9,7 +9,7 @@ import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
-internal class EcomCheckoutEntry(public val offerId: String) : StructWriter {
+internal class EcomCheckoutEntry(val offerId: String) : StructWriter {
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, API_LATEST)

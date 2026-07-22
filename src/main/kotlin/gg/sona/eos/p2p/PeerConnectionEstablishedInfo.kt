@@ -2,10 +2,10 @@ package gg.sona.eos.p2p
 
 import gg.sona.eos.common.ProductUserId
 
-public class PeerConnectionEstablishedInfo(
-    public val localUserId: ProductUserId,
-    public val remoteUserId: ProductUserId,
-    public val socketId: EosP2PSocketId,
-    public val type: EosConnectionEstablishedType,
-    public val networkType: EosNetworkConnectionType,
+class PeerConnectionEstablishedInfo(
+    val localUserId: ProductUserId,
+    val remoteUserId: ProductUserId,
+    val socketId: EosP2PSocketId,
+    val type: EosConnectionEstablishedType,
+    val networkType: EosNetworkConnectionType,
 )

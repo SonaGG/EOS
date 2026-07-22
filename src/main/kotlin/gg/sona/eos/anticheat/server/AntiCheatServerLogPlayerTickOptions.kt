@@ -25,15 +25,18 @@ internal class AntiCheatServerLogPlayerTickOptions(
         seg.setInt64(8, playerHandle.raw)
         val positionSeg = arena.allocate(
             MemoryLayout.structLayout(
-            ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
-        ))
+                ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
+            )
+        )
         positionSeg.set(ValueLayout.JAVA_FLOAT, 0, playerPosition.x)
         positionSeg.set(ValueLayout.JAVA_FLOAT, 4, playerPosition.y)
         positionSeg.set(ValueLayout.JAVA_FLOAT, 8, playerPosition.z)
         seg.setInt64(16, positionSeg.address())
-        val viewRotSeg = arena.allocate(MemoryLayout.structLayout(
-            ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
-        ))
+        val viewRotSeg = arena.allocate(
+            MemoryLayout.structLayout(
+                ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
+            )
+        )
         viewRotSeg.set(ValueLayout.JAVA_FLOAT, 0, playerViewRotation.w)
         viewRotSeg.set(ValueLayout.JAVA_FLOAT, 4, playerViewRotation.x)
         viewRotSeg.set(ValueLayout.JAVA_FLOAT, 8, playerViewRotation.y)
@@ -44,9 +47,11 @@ internal class AntiCheatServerLogPlayerTickOptions(
         seg.setInt32(40, playerMovementState.value)
         if (playerViewPosition != null) {
             val pos = playerViewPosition!!
-            val vpSeg = arena.allocate(MemoryLayout.structLayout(
-                ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
-            ))
+            val vpSeg = arena.allocate(
+                MemoryLayout.structLayout(
+                    ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_FLOAT,
+                )
+            )
             vpSeg.set(ValueLayout.JAVA_FLOAT, 0, pos.x)
             vpSeg.set(ValueLayout.JAVA_FLOAT, 4, pos.y)
             vpSeg.set(ValueLayout.JAVA_FLOAT, 8, pos.z)

@@ -30,54 +30,54 @@ import java.lang.foreign.ValueLayout
  * At minimum [productId], [sandboxId], [deploymentId], and [clientCredentials]
  * are required. Set [isServer] to true for dedicated server builds.
  */
-public class EosPlatformOptions internal constructor() : StructWriter {
+class EosPlatformOptions internal constructor() : StructWriter {
 
-    public var apiVersion: Int = API_LATEST
+    var apiVersion: Int = API_LATEST
 
     /** Required. The product id from the dev portal. Max 64 bytes. */
-    public var productId: String = ""
+    var productId: String = ""
 
     /** Required. The sandbox id from the dev portal. Max 64 bytes. */
-    public var sandboxId: String = ""
+    var sandboxId: String = ""
 
     /** Optional. The deployment id from the dev portal. Max 64 bytes. */
-    public var deploymentId: String = ""
+    var deploymentId: String = ""
 
     /** Required. The client credentials issued by the dev portal. */
-    public var clientCredentials: EosClientCredentials = EosClientCredentials()
+    var clientCredentials: EosClientCredentials = EosClientCredentials()
 
     /** Set to true for dedicated server builds. Default false. */
-    public var isServer: Boolean = false
+    var isServer: Boolean = false
 
     /**
      * The 256-bit encryption key used by PlayerDataStorage and TitleStorage,
      * formatted as 64 hex characters. Leave null to disable storage encryption.
      */
-    public var encryptionKey: String? = null
+    var encryptionKey: String? = null
 
     /** Override the country code used for ecom. Leave null for the default. */
-    public var overrideCountryCode: String? = null
+    var overrideCountryCode: String? = null
 
     /** Override the locale code used for ecom. Leave null for the default. */
-    public var overrideLocaleCode: String? = null
+    var overrideLocaleCode: String? = null
 
     /** Bitwise-or of [EosPlatformFlags]. */
-    public var flags: Int = 0
+    var flags: Int = 0
 
     /**
      * Absolute path to a directory used for caching. Required if
      * [EosPlatformFlags.DisableOverlay] is not set and you want to enable
      * PlayerDataStorage or TitleStorage.
      */
-    public var cacheDirectory: String? = null
+    var cacheDirectory: String? = null
 
     /**
      * Maximum milliseconds per tick. Zero means "perform all available work".
      */
-    public var tickBudgetInMilliseconds: Int = 0
+    var tickBudgetInMilliseconds: Int = 0
 
     /** Optional RTC options. Leave null to disable RTC. */
-    public var rtcOptions: EosRtcOptions? = null
+    var rtcOptions: EosRtcOptions? = null
 
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
@@ -86,7 +86,9 @@ public class EosPlatformOptions internal constructor() : StructWriter {
         seg.set(ValueLayout.ADDRESS, OFFSET_PRODUCT_ID, arena.allocCString(productId))
         seg.set(ValueLayout.ADDRESS, OFFSET_SANDBOX_ID, arena.allocCString(sandboxId))
         seg.setInt64(OFFSET_CLIENT_ID, clientCredentials.clientId?.let { arena.allocCString(it).address() } ?: 0L)
-        seg.setInt64(OFFSET_CLIENT_SECRET, clientCredentials.clientSecret?.let { arena.allocCString(it).address() } ?: 0L)
+        seg.setInt64(
+            OFFSET_CLIENT_SECRET,
+            clientCredentials.clientSecret?.let { arena.allocCString(it).address() } ?: 0L)
         seg.setInt32(OFFSET_IS_SERVER, if (isServer) 1 else 0)
         seg.setInt64(OFFSET_ENCRYPTION_KEY, encryptionKey?.let { arena.allocCString(it).address() } ?: 0L)
         seg.setInt64(OFFSET_COUNTRY, overrideCountryCode?.let { arena.allocCString(it).address() } ?: 0L)
@@ -102,8 +104,8 @@ public class EosPlatformOptions internal constructor() : StructWriter {
         return seg
     }
 
-    public companion object {
-        public const val API_LATEST: Int = 15
+    companion object {
+        const val API_LATEST: Int = 15
 
         internal val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT.withName("ApiVersion"),
@@ -148,7 +150,7 @@ public class EosPlatformOptions internal constructor() : StructWriter {
         internal const val OFFSET_SYSTEM_OPTIONS: Long = 128
         internal const val OFFSET_TASK_TIMEOUT: Long = 136
 
-        public fun create(
+        fun create(
             productId: String,
             sandboxId: String,
             deploymentId: String,

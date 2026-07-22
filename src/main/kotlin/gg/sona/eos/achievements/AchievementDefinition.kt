@@ -1,14 +1,14 @@
 package gg.sona.eos.achievements
 
-public class AchievementDefinition(
-    public val id: String,
-    public val unlockedDisplayName: String,
-    public val unlockedDescription: String,
-    public val lockedDisplayName: String,
-    public val lockedDescription: String,
-    public val flavorText: String,
-    public val unlockedIconUrl: String,
-    public val lockedIconUrl: String,
-    public val isHidden: Boolean,
-    public val statThresholds: List<StatThreshold>,
+class AchievementDefinition(
+    val id: String,
+    val unlockedDisplayName: String,
+    val unlockedDescription: String,
+    val lockedDisplayName: String,
+    val lockedDescription: String,
+    val flavorText: String,
+    val unlockedIconUrl: String,
+    val lockedIconUrl: String,
+    val isHidden: Boolean,
+    val statThresholds: List<StatThreshold>,
 )

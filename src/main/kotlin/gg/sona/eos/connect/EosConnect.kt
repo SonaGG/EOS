@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Connect interface for external account login and account mapping.
  */
-public class EosConnect internal constructor(private val platform: EosPlatform) {
+class EosConnect internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -50,7 +50,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
      * Oculus, and Device ID logins, and [nsaIdToken] is required on Nintendo
      * Switch for any credential type other than [EosExternalCredentialType.NintendoNsaIdToken].
      */
-    public fun login(
+    fun login(
         credentialType: EosExternalCredentialType,
         token: String,
         displayName: String? = null,
@@ -84,7 +84,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun logout(localUserId: ProductUserId): CompletableFuture<EosResult> {
+    fun logout(localUserId: ProductUserId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Connect_LogoutCallbackInfo: ResultCode@0
         val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
@@ -101,7 +101,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun createUser(continuanceToken: ContinuanceToken): CompletableFuture<LoginResult> {
+    fun createUser(continuanceToken: ContinuanceToken): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
             // EOS_Connect_CreateUserCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
@@ -128,7 +128,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
      * token can be used with createUser OR (if a product user is already
      * logged in) with linkAccount.
      */
-    public fun linkAccount(
+    fun linkAccount(
         localUserId: ProductUserId,
         continuanceToken: ContinuanceToken,
     ): CompletableFuture<LoginResult> {
@@ -152,7 +152,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun createDeviceId(): CompletableFuture<EosResult> {
+    fun createDeviceId(): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Connect_CreateDeviceIdCallbackInfo: ResultCode@0
         val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
@@ -169,7 +169,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun deleteDeviceId(): CompletableFuture<EosResult> {
+    fun deleteDeviceId(): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_Connect_DeleteDeviceIdCallbackInfo: ResultCode@0
         val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
@@ -186,7 +186,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return future
     }
 
-    public fun getLoggedInUsersCount(): Int {
+    fun getLoggedInUsersCount(): Int {
         val fn = Native.downcall(
             "EOS_Connect_GetLoggedInUsersCount",
             FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG)
@@ -194,7 +194,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return fn.invokeExact(handle()) as Int
     }
 
-    public fun getLoggedInUserByIndex(index: Int): ProductUserId {
+    fun getLoggedInUserByIndex(index: Int): ProductUserId {
         val fn = Native.downcall(
             "EOS_Connect_GetLoggedInUserByIndex",
             FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT)
@@ -202,7 +202,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return ProductUserId(fn.invokeExact(handle(), index) as Long)
     }
 
-    public fun getLoginStatus(localUserId: ProductUserId): EosLoginStatus {
+    fun getLoginStatus(localUserId: ProductUserId): EosLoginStatus {
         val fn = Native.downcall(
             "EOS_Connect_GetLoginStatus",
             FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
@@ -210,7 +210,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return EosLoginStatus.fromValue(fn.invokeExact(handle(), localUserId.raw) as Int)
     }
 
-    public fun addNotifyLoginStatusChanged(callback: (LoginStatusChangedInfo) -> Unit): NotificationHandle {
+    fun addNotifyLoginStatusChanged(callback: (LoginStatusChangedInfo) -> Unit): NotificationHandle {
         val invoker = EosCallback { data ->
             // EOS_Connect_LoginStatusChangedCallbackInfo: ClientData@0, LocalUserId@8, PreviousStatus@16, CurrentStatus@20
             val localUserId = ProductUserId(data.getInt64(8))
@@ -232,7 +232,7 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyLoginStatusChanged(handle: NotificationHandle) {
+    fun removeNotifyLoginStatusChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_Connect_RemoveNotifyLoginStatusChanged",
             listOf(handle(), handle.notificationId),

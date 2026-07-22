@@ -7,8 +7,8 @@ import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
 /** RTC options for the platform. */
-public class EosRtcOptions : StructWriter {
-    public var backgroundMode: EosRtcBackgroundMode = EosRtcBackgroundMode.LeaveRooms
+class EosRtcOptions : StructWriter {
+    var backgroundMode: EosRtcBackgroundMode = EosRtcBackgroundMode.LeaveRooms
 
     /**
      * Absolute path to `xaudio2_9redist.dll`.
@@ -17,7 +17,7 @@ public class EosRtcOptions : StructWriter {
      * failure surfaces as a null handle out of `EOS_Platform_Create` rather than an error code.
      * Defaults to the copy bundled in this library, so it only needs setting to override that.
      */
-    public var xAudio29DllPath: String? = null
+    var xAudio29DllPath: String? = null
 
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
@@ -39,8 +39,8 @@ public class EosRtcOptions : StructWriter {
         return seg
     }
 
-    public companion object {
-        public const val API_LATEST: Int = 3
+    companion object {
+        const val API_LATEST: Int = 3
 
         internal const val WINDOWS_API_LATEST: Int = 1
         internal const val XAUDIO_DLL: String = "xaudio2_9redist.dll"

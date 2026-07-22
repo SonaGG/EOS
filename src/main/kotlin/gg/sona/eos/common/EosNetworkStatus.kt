@@ -3,7 +3,7 @@ package gg.sona.eos.common
 /**
  * Network state as told to the SDK by the application.
  */
-public enum class EosNetworkStatus(val value: Int) {
+enum class EosNetworkStatus(val value: Int) {
     /** Networking is disabled. */
     Disabled(0),
 
@@ -13,7 +13,7 @@ public enum class EosNetworkStatus(val value: Int) {
     /** Online. */
     Online(2);
 
-    public companion object {
-        public fun fromValue(v: Int): EosNetworkStatus = entries.firstOrNull { it.value == v } ?: Offline
+    companion object {
+        fun fromValue(v: Int): EosNetworkStatus = entries.firstOrNull { it.value == v } ?: Offline
     }
 }

@@ -20,14 +20,16 @@ import gg.sona.eos.EosResult
 import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.EpicAccountId
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /**
  * UI interface. Provides access to the social overlay (friends list, chat)
  * and key/button bindings.
  */
-public class EosUi internal constructor(private val platform: EosPlatform) {
+class EosUi internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -38,7 +40,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
     }
 
     /** Open the social overlay's friends list. */
-    public fun showFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun showFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_UI_ShowFriendsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -57,7 +59,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
     }
 
     /** Hide the social overlay. */
-    public fun hideFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
+    fun hideFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_UI_HideFriendsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -75,7 +77,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun isFriendsOverlayVisible(localUserId: EpicAccountId): Boolean {
+    fun isFriendsOverlayVisible(localUserId: EpicAccountId): Boolean {
         val options = UiGetFriendsVisibleOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -88,7 +90,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun isFriendsOverlayExclusiveInput(localUserId: EpicAccountId): Boolean {
+    fun isFriendsOverlayExclusiveInput(localUserId: EpicAccountId): Boolean {
         val options = UiGetFriendsExclusiveInputOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -101,7 +103,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun addNotifyDisplaySettingsUpdated(
+    fun addNotifyDisplaySettingsUpdated(
         callback: (DisplaySettingsUpdatedInfo) -> Unit,
     ): NotificationHandle {
         // EOS_UI_OnDisplaySettingsUpdatedCallbackInfo: ClientData@0, bIsVisible@8, bIsExclusiveInput@12
@@ -124,7 +126,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyDisplaySettingsUpdated(handle: NotificationHandle) {
+    fun removeNotifyDisplaySettingsUpdated(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_UI_RemoveNotifyDisplaySettingsUpdated",
             listOf(handle(), handle.notificationId),
@@ -133,7 +135,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun setToggleFriendsKey(keyCombination: Int): EosResult = withCallArena { arena ->
+    fun setToggleFriendsKey(keyCombination: Int): EosResult = withCallArena { arena ->
         val options = UiSetToggleFriendsKeyOptions(keyCombination)
         EosResult.fromValue(
             Native.invoke(
@@ -145,7 +147,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public fun getToggleFriendsKey(): Int = withCallArena { arena ->
+    fun getToggleFriendsKey(): Int = withCallArena { arena ->
         val options = UiGetToggleFriendsKeyOptions()
         Native.invoke(
             "EOS_UI_GetToggleFriendsKey",
@@ -155,7 +157,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         ) as Int
     }
 
-    public fun isValidKeyCombination(keyCombination: Int): Boolean = withCallArena { arena ->
+    fun isValidKeyCombination(keyCombination: Int): Boolean = withCallArena { arena ->
         (Native.invoke(
             "EOS_UI_IsValidKeyCombination",
             listOf(handle(), keyCombination),
@@ -164,7 +166,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         ) as Int) != 0
     }
 
-    public fun setToggleFriendsButton(buttonFlags: Int): EosResult = withCallArena { arena ->
+    fun setToggleFriendsButton(buttonFlags: Int): EosResult = withCallArena { arena ->
         val options = UiSetToggleFriendsButtonOptions(buttonFlags)
         EosResult.fromValue(
             Native.invoke(
@@ -176,7 +178,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         )
     }
 
-    public fun getToggleFriendsButton(): Int = withCallArena { arena ->
+    fun getToggleFriendsButton(): Int = withCallArena { arena ->
         val options = UiGetToggleFriendsButtonOptions()
         Native.invoke(
             "EOS_UI_GetToggleFriendsButton",
@@ -186,7 +188,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         ) as Int
     }
 
-    public fun isValidButtonCombination(flags: Int): Boolean = withCallArena { arena ->
+    fun isValidButtonCombination(flags: Int): Boolean = withCallArena { arena ->
         (Native.invoke(
             "EOS_UI_IsValidButtonCombination",
             listOf(handle(), flags),
@@ -195,7 +197,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
         ) as Int) != 0
     }
 
-    public fun setDisplayPreference(preference: EosUiNotificationLocation): EosResult =
+    fun setDisplayPreference(preference: EosUiNotificationLocation): EosResult =
         withCallArena { arena ->
             val options = UiSetDisplayPreferenceOptions(preference)
             EosResult.fromValue(
@@ -208,7 +210,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
             )
         }
 
-    public fun getNotificationLocationPreference(): EosUiNotificationLocation = withCallArena { arena ->
+    fun getNotificationLocationPreference(): EosUiNotificationLocation = withCallArena { arena ->
         EosUiNotificationLocation.fromValue(
             Native.invoke(
                 "EOS_UI_GetNotificationLocationPreference",
@@ -220,7 +222,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
     }
 
     /** Acknowledge that the UI has handled the given event id. */
-    public fun acknowledgeEventId(eventId: Long): EosResult = withCallArena { arena ->
+    fun acknowledgeEventId(eventId: Long): EosResult = withCallArena { arena ->
         val options = UiAcknowledgeEventIdOptions(eventId)
         EosResult.fromValue(
             Native.invoke(
@@ -233,7 +235,7 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
     }
 
     /** Reports current gamepad input state to the EOS overlay. */
-    public fun reportInputState(
+    fun reportInputState(
         localUserId: EpicAccountId,
         buttonFlags: Int,
     ): EosResult = withCallArena { arena ->

@@ -15,6 +15,9 @@
  */
 package gg.sona.eos
 
+import gg.sona.eos.Eos.createPlatform
+import gg.sona.eos.Eos.initialize
+import gg.sona.eos.Eos.shutdown
 import gg.sona.eos.internal.Native
 import gg.sona.eos.internal.withArena
 import gg.sona.eos.internal.withStruct
@@ -30,22 +33,22 @@ import java.util.concurrent.atomic.AtomicBoolean
  * exits. The [EosPlatform] returned by [createPlatform] gives access to every
  * subsystem.
  */
-public object Eos {
+object Eos {
 
     private val initialized = AtomicBoolean(false)
 
     /** The version string of the loaded EOS SDK shared library (e.g. "1.19.1.2-12345"). */
-    public val version: String by lazy { Native.version() }
+    val version: String by lazy { Native.version() }
 
     /** True if [initialize] has been called and [shutdown] has not yet been called. */
-    public val isInitialized: Boolean
+    val isInitialized: Boolean
         get() = initialized.get()
 
     /**
      * Initialize the SDK. Must be called before any other API, and at most once
      * before a matching [shutdown] call.
      */
-    public fun initialize(options: EosInitializeOptions): EosResult {
+    fun initialize(options: EosInitializeOptions): EosResult {
         if (initialized.get()) return EosResult.AlreadyConfigured
         val result = withStruct(options) { segment, _ ->
             val fn = Native.downcall(
@@ -62,7 +65,7 @@ public object Eos {
      * Tear down the SDK. Must be called at most once and only after a successful
      * [initialize]. After this call returns, no other EOS API may be invoked.
      */
-    public fun shutdown(): EosResult {
+    fun shutdown(): EosResult {
         if (!initialized.get()) return EosResult.NotConfigured
         val fn = Native.downcall("EOS_Shutdown", FunctionDescriptor.of(ValueLayout.JAVA_INT))
         val result = EosResult.fromValue(fn.invokeExact() as Int)
@@ -74,7 +77,7 @@ public object Eos {
      * Create a platform instance. The returned instance must be released by
      * calling [EosPlatform.close] (or with a `use { }` block).
      */
-    public fun createPlatform(options: EosPlatformOptions): EosPlatform {
+    fun createPlatform(options: EosPlatformOptions): EosPlatform {
         if (!initialized.get()) error("EOS SDK is not initialized; call Eos.initialize first")
         return withStruct(options) { segment, _ ->
             val fn = Native.downcall(
@@ -89,8 +92,8 @@ public object Eos {
             if (handle == 0L) {
                 error(
                     "EOS_Platform_Create returned null. Check the product, sandbox and deployment " +
-                        "ids, the client credentials, and - when RTC is enabled on Windows - that " +
-                        "xaudio2_9redist.dll could be located."
+                            "ids, the client credentials, and - when RTC is enabled on Windows - that " +
+                            "xaudio2_9redist.dll could be located."
                 )
             }
 
@@ -102,7 +105,7 @@ public object Eos {
      * Convert a hex byte string into raw bytes. The output is at most
      * [expectedLength] bytes; the result is truncated to that length.
      */
-    public fun byteArrayToString(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): String {
+    fun byteArrayToString(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): String {
         require(offset >= 0 && length >= 0 && offset + length <= bytes.size) { "byte range out of bounds" }
         if (length == 0) return ""
         return withArena { arena ->

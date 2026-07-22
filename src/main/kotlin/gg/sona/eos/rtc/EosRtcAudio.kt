@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * RTC audio sub-interface for managing voice capture, playback, and devices.
  */
-public class EosRtcAudio internal constructor(private val platform: EosPlatform) {
+class EosRtcAudio internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -45,7 +45,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     }
 
     /** Send an audio frame to the room's participants. Requires manual audio input to be enabled. */
-    public fun sendAudio(
+    fun sendAudio(
         localUserId: ProductUserId,
         roomName: String,
         frames: ShortArray,
@@ -54,11 +54,13 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     ): EosResult {
         require(frames.isNotEmpty()) { "frames must not be empty" }
         return withCallArena { arena ->
-            val bufferSeg = arena.allocate(MemoryLayout.structLayout(
-                ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-                ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT,
-                MemoryLayout.paddingLayout(4),
-            ))
+            val bufferSeg = arena.allocate(
+                MemoryLayout.structLayout(
+                    ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+                    ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT,
+                    MemoryLayout.paddingLayout(4),
+                )
+            )
             val framesSeg = arena.allocate(ValueLayout.JAVA_SHORT, frames.size.toLong())
             framesSeg.copyFrom(MemorySegment.ofArray(frames))
             bufferSeg.setInt32(0, 1) // API version
@@ -79,7 +81,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     }
 
     /** Update sending audio status (enabled, disabled, etc.) for a room. */
-    public fun updateSending(
+    fun updateSending(
         localUserId: ProductUserId,
         roomName: String,
         status: EosRtcAudioStatus,
@@ -102,7 +104,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     }
 
     /** Update receiving audio status (per-room or per-participant). */
-    public fun updateReceiving(
+    fun updateReceiving(
         localUserId: ProductUserId,
         roomName: String,
         participantId: ProductUserId?,
@@ -125,7 +127,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun updateSendingVolume(
+    fun updateSendingVolume(
         localUserId: ProductUserId,
         roomName: String,
         volume: Float,
@@ -147,7 +149,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun updateReceivingVolume(
+    fun updateReceivingVolume(
         localUserId: ProductUserId,
         roomName: String,
         volume: Float,
@@ -169,7 +171,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun updateParticipantVolume(
+    fun updateParticipantVolume(
         localUserId: ProductUserId,
         roomName: String,
         participantId: ProductUserId?,
@@ -192,7 +194,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun addNotifyParticipantUpdated(
+    fun addNotifyParticipantUpdated(
         localUserId: ProductUserId,
         roomName: String,
         callback: (ParticipantUpdatedInfo) -> Unit,
@@ -233,7 +235,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
      * cheap and must not block. [AudioFrames] reads native memory that EOS owns and frees when the
      * callback returns - measure inside the callback and keep the number, never the buffer.
      */
-    public fun addNotifyAudioBeforeSend(
+    fun addNotifyAudioBeforeSend(
         localUserId: ProductUserId,
         roomName: String,
         callback: (AudioBeforeSendInfo) -> Unit,
@@ -263,7 +265,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyAudioBeforeSend(handle: NotificationHandle) {
+    fun removeNotifyAudioBeforeSend(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTCAudio_RemoveNotifyAudioBeforeSend",
             listOf(handle(), handle.notificationId),
@@ -272,7 +274,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun removeNotifyParticipantUpdated(handle: NotificationHandle) {
+    fun removeNotifyParticipantUpdated(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTCAudio_RemoveNotifyParticipantUpdated",
             listOf(handle(), handle.notificationId),
@@ -281,7 +283,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyAudioDevicesChanged(callback: () -> Unit): NotificationHandle {
+    fun addNotifyAudioDevicesChanged(callback: () -> Unit): NotificationHandle {
         val invoker = EosCallback { _ -> callback() }
         val handle = CallbackStubs.register(invoker)
         val options = RtcAudioAddNotifyAudioDevicesChangedOptions()
@@ -297,7 +299,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyAudioDevicesChanged(handle: NotificationHandle) {
+    fun removeNotifyAudioDevicesChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTCAudio_RemoveNotifyAudioDevicesChanged",
             listOf(handle(), handle.notificationId),
@@ -306,7 +308,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyAudioInputState(
+    fun addNotifyAudioInputState(
         localUserId: ProductUserId,
         roomName: String,
         callback: (AudioInputStateInfo) -> Unit,
@@ -332,7 +334,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyAudioInputState(handle: NotificationHandle) {
+    fun removeNotifyAudioInputState(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTCAudio_RemoveNotifyAudioInputState",
             listOf(handle(), handle.notificationId),
@@ -341,7 +343,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyAudioOutputState(
+    fun addNotifyAudioOutputState(
         localUserId: ProductUserId,
         roomName: String,
         callback: (AudioOutputStateInfo) -> Unit,
@@ -367,7 +369,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyAudioOutputState(handle: NotificationHandle) {
+    fun removeNotifyAudioOutputState(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTCAudio_RemoveNotifyAudioOutputState",
             listOf(handle(), handle.notificationId),
@@ -376,7 +378,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun registerPlatformUser(
+    fun registerPlatformUser(
         platformUserId: String,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
@@ -396,7 +398,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
         return future
     }
 
-    public fun unregisterPlatformUser(platformUserId: String): CompletableFuture<EosResult> {
+    fun unregisterPlatformUser(platformUserId: String): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_RTCAudio_OnUnregisterPlatformUserCallbackInfo: ResultCode@0
         val handle = CallbackStubs.register(EosCallback { data ->
@@ -421,7 +423,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
      * populated once this completes; read it with [getInputDevicesCount] and
      * [copyInputDeviceInformationByIndex].
      */
-    public fun queryInputDevicesInformation(): CompletableFuture<EosResult> {
+    fun queryInputDevicesInformation(): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_RTCAudio_OnQueryInputDevicesInformationCallbackInfo: ResultCode@0
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -439,7 +441,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     }
 
     /** Number of cached audio input devices. Call [queryInputDevicesInformation] first. */
-    public fun getInputDevicesCount(): Int = withCallArena { arena ->
+    fun getInputDevicesCount(): Int = withCallArena { arena ->
         val seg = RtcAudioGetDevicesCountOptions().writeTo(arena)
         Native.invoke(
             "EOS_RTCAudio_GetInputDevicesCount",
@@ -450,7 +452,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     }
 
     /** Copy the cached information for the input device at [deviceIndex], or null if unavailable. */
-    public fun copyInputDeviceInformationByIndex(deviceIndex: Int): EosRtcAudioDeviceInfo? =
+    fun copyInputDeviceInformationByIndex(deviceIndex: Int): EosRtcAudioDeviceInfo? =
         withCallArena { arena ->
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
             val result = EosResult.fromValue(
@@ -482,7 +484,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
      * populated once this completes; read it with [getOutputDevicesCount] and
      * [copyOutputDeviceInformationByIndex].
      */
-    public fun queryOutputDevicesInformation(): CompletableFuture<EosResult> {
+    fun queryOutputDevicesInformation(): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_RTCAudio_OnQueryOutputDevicesInformationCallbackInfo: ResultCode@0
         val stub = CallbackStubs.register(EosCallback { data ->
@@ -500,7 +502,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     }
 
     /** Number of cached audio output devices. Call [queryOutputDevicesInformation] first. */
-    public fun getOutputDevicesCount(): Int = withCallArena { arena ->
+    fun getOutputDevicesCount(): Int = withCallArena { arena ->
         val seg = RtcAudioGetDevicesCountOptions().writeTo(arena)
         Native.invoke(
             "EOS_RTCAudio_GetOutputDevicesCount",
@@ -511,7 +513,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
     }
 
     /** Copy the cached information for the output device at [deviceIndex], or null if unavailable. */
-    public fun copyOutputDeviceInformationByIndex(deviceIndex: Int): EosRtcAudioDeviceInfo? =
+    fun copyOutputDeviceInformationByIndex(deviceIndex: Int): EosRtcAudioDeviceInfo? =
         withCallArena { arena ->
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
             val result = EosResult.fromValue(
@@ -543,7 +545,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
      * [realDeviceId] to fall back to the system default. An unknown id is
      * remembered and applied if that device later appears.
      */
-    public fun setInputDeviceSettings(
+    fun setInputDeviceSettings(
         localUserId: ProductUserId,
         realDeviceId: String?,
         platformAec: Boolean = false,
@@ -569,7 +571,7 @@ public class EosRtcAudio internal constructor(private val platform: EosPlatform)
      * Select the audio output device for [localUserId]. Pass a null or blank
      * [realDeviceId] to fall back to the system default.
      */
-    public fun setOutputDeviceSettings(
+    fun setOutputDeviceSettings(
         localUserId: ProductUserId,
         realDeviceId: String?,
     ): CompletableFuture<EosResult> {

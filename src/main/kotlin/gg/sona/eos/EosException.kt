@@ -24,11 +24,11 @@ package gg.sona.eos
  * prefer to surface failures through Kotlin's exception machinery (such as
  * `runCatching` blocks).
  */
-public class EosException(
-    public val result: EosResult,
+class EosException(
+    val result: EosResult,
     message: String? = null,
     cause: Throwable? = null,
 ) : RuntimeException(message ?: "EOS operation failed: $result", cause) {
 
-    public constructor(message: String) : this(EosResult.UnexpectedError, message, null)
+    constructor(message: String) : this(EosResult.UnexpectedError, message, null)
 }

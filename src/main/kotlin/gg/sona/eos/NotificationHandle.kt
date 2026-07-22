@@ -19,7 +19,7 @@ package gg.sona.eos
  * A handle to a registered EOS notification. The handle is required to remove
  * the corresponding callback.
  */
-public class NotificationHandle internal constructor(
+class NotificationHandle internal constructor(
     @JvmField internal val notificationId: Long,
     @JvmField internal val callbackId: Long,
 )

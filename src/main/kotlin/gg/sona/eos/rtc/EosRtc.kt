@@ -33,16 +33,16 @@ import java.util.concurrent.CompletableFuture
  * [audio], [data], and [admin] sub-interfaces to manage voice, data channels,
  * and server-side operations respectively.
  */
-public class EosRtc internal constructor(private val platform: EosPlatform) {
+class EosRtc internal constructor(private val platform: EosPlatform) {
 
     /** Audio sub-interface. */
-    public val audio: EosRtcAudio = EosRtcAudio(platform)
+    val audio: EosRtcAudio = EosRtcAudio(platform)
 
     /** Data sub-interface for in-room data channel communication. */
-    public val data: EosRtcData = EosRtcData(platform)
+    val data: EosRtcData = EosRtcData(platform)
 
     /** Admin sub-interface for server-side management. */
-    public val admin: EosRtcAdmin = EosRtcAdmin(platform)
+    val admin: EosRtcAdmin = EosRtcAdmin(platform)
 
     /** Internal: the C handle for the platform's RTC interface. */
     internal fun rtcHandle(): Long = invokeHandle(platform.handle)
@@ -54,7 +54,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
      * @param participantToken a token obtained from the dedicated server via
      *   [EosRtcAdmin.queryJoinRoomToken].
      */
-    public fun joinRoom(
+    fun joinRoom(
         localUserId: ProductUserId,
         roomName: String,
         clientBaseUrl: String,
@@ -91,7 +91,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun leaveRoom(localUserId: ProductUserId, roomName: String): CompletableFuture<EosResult> {
+    fun leaveRoom(localUserId: ProductUserId, roomName: String): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_RTC_LeaveRoomCallbackInfo: ResultCode@0
         val handle = CallbackStubs.register(EosCallback { data ->
@@ -109,7 +109,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun blockParticipant(
+    fun blockParticipant(
         localUserId: ProductUserId,
         roomName: String,
         participantId: ProductUserId,
@@ -132,7 +132,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         return future
     }
 
-    public fun addNotifyDisconnected(
+    fun addNotifyDisconnected(
         localUserId: ProductUserId,
         roomName: String,
         callback: (DisconnectedInfo) -> Unit,
@@ -161,7 +161,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyDisconnected(handle: NotificationHandle) {
+    fun removeNotifyDisconnected(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTC_RemoveNotifyDisconnected",
             listOf(rtcHandle(), handle.notificationId),
@@ -170,7 +170,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyParticipantStatusChanged(
+    fun addNotifyParticipantStatusChanged(
         localUserId: ProductUserId,
         roomName: String,
         callback: (ParticipantStatusChangedInfo) -> Unit,
@@ -199,7 +199,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyParticipantStatusChanged(handle: NotificationHandle) {
+    fun removeNotifyParticipantStatusChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTC_RemoveNotifyParticipantStatusChanged",
             listOf(rtcHandle(), handle.notificationId),
@@ -208,7 +208,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyRoomBeforeJoin(
+    fun addNotifyRoomBeforeJoin(
         localUserId: ProductUserId,
         callback: (RoomBeforeJoinInfo) -> Unit,
     ): NotificationHandle {
@@ -232,7 +232,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyRoomBeforeJoin(handle: NotificationHandle) {
+    fun removeNotifyRoomBeforeJoin(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTC_RemoveNotifyRoomBeforeJoin",
             listOf(rtcHandle(), handle.notificationId),
@@ -241,7 +241,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyRoomStatisticsUpdated(
+    fun addNotifyRoomStatisticsUpdated(
         localUserId: ProductUserId,
         roomName: String,
         callback: (RoomStatisticsUpdatedInfo) -> Unit,
@@ -267,7 +267,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyRoomStatisticsUpdated(handle: NotificationHandle) {
+    fun removeNotifyRoomStatisticsUpdated(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_RTC_RemoveNotifyRoomStatisticsUpdated",
             listOf(rtcHandle(), handle.notificationId),
@@ -276,7 +276,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun setSetting(name: String, value: String): EosResult {
+    fun setSetting(name: String, value: String): EosResult {
         val options = RtcSetSettingOptions(name, value)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -291,7 +291,7 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
         }
     }
 
-    public fun setRoomSetting(localUserId: ProductUserId, roomName: String, name: String, value: String): EosResult {
+    fun setRoomSetting(localUserId: ProductUserId, roomName: String, name: String, value: String): EosResult {
         val options = RtcSetRoomSettingOptions(localUserId, roomName, name, value)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)

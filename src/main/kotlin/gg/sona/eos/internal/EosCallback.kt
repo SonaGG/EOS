@@ -11,6 +11,7 @@ import java.lang.foreign.ValueLayout
  */
 fun interface EosCallback {
     fun invoke(data: MemorySegment)
+
     companion object {
         internal val descriptor: FunctionDescriptor = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)
     }

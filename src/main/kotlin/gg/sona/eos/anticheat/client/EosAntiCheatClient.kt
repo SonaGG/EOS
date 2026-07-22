@@ -43,7 +43,7 @@ import java.lang.foreign.ValueLayout
  *  - [EosAntiCheatClientMode.PeerToPeer]: The client reports to other clients
  *    in the same session. Useful for fully peer-to-peer games.
  */
-public class EosAntiCheatClient internal constructor(private val platform: EosPlatform) {
+class EosAntiCheatClient internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -58,7 +58,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
      * client is ready to exchange anti-cheat messages with a game server or
      * peer(s).
      */
-    public fun beginSession(localUserId: ProductUserId, mode: EosAntiCheatClientMode): EosResult =
+    fun beginSession(localUserId: ProductUserId, mode: EosAntiCheatClientMode): EosResult =
         withCallArena { arena ->
             val options = AntiCheatClientBeginSessionOptions(localUserId, mode)
             EosResult.fromValue(
@@ -72,7 +72,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         }
 
     /** End the current anti-cheat session. */
-    public fun endSession(): EosResult = withCallArena { arena ->
+    fun endSession(): EosResult = withCallArena { arena ->
         val options = AntiCheatClientEndSessionOptions()
         EosResult.fromValue(
             Native.invoke(
@@ -88,7 +88,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
      * Add an integrity catalog and certificate pair from outside the game
      * directory, e.g. for mods that load from elsewhere.
      */
-    public fun addExternalIntegrityCatalog(pathToBinFile: String): EosResult = withCallArena { arena ->
+    fun addExternalIntegrityCatalog(pathToBinFile: String): EosResult = withCallArena { arena ->
         val options = AntiCheatClientAddExternalIntegrityCatalogOptions(pathToBinFile)
         EosResult.fromValue(
             Native.invoke(
@@ -104,7 +104,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
      * Get the build id of the loaded anti-cheat client module. Useful for
      * analytics or troubleshooting.
      */
-    public fun getModuleBuildId(): UInt? = withCallArena { arena ->
+    fun getModuleBuildId(): UInt? = withCallArena { arena ->
         val outPtr = arena.allocate(ValueLayout.JAVA_INT)
         val options = AntiCheatClientGetModuleBuildIdOptions()
         val result = EosResult.fromValue(
@@ -129,7 +129,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
      *
      * Only valid in [EosAntiCheatClientMode.ClientServer] mode.
      */
-    public fun addNotifyMessageToServer(
+    fun addNotifyMessageToServer(
         callback: (MessageToServerInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
@@ -158,7 +158,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyMessageToServer(handle: NotificationHandle) {
+    fun removeNotifyMessageToServer(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatClient_RemoveNotifyMessageToServer",
             listOf(handle(), handle.notificationId),
@@ -168,7 +168,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
     }
 
     /** Receive an anti-cheat message from the game server. ClientServer mode only. */
-    public fun receiveMessageFromServer(data: ByteArray): EosResult {
+    fun receiveMessageFromServer(data: ByteArray): EosResult {
         require(data.size <= MAX_MESSAGE_SIZE) { "message exceeds MAX_MESSAGE_SIZE" }
         return withCallArena { arena ->
             val buf = arena.allocate(data.size.toLong())
@@ -190,7 +190,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
      * [dataLengthBytes] bytes via [protectMessage]. The result is stable for
      * a given SDK version.
      */
-    public fun getProtectMessageOutputLength(dataLengthBytes: Int): Int = withCallArena { arena ->
+    fun getProtectMessageOutputLength(dataLengthBytes: Int): Int = withCallArena { arena ->
         val outPtr = arena.allocate(ValueLayout.JAVA_INT)
         val options = AntiCheatClientGetProtectMessageOutputLengthOptions(dataLengthBytes)
         EosResult.fromValue(
@@ -209,7 +209,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
      * returned [ProtectedMessage.outBuffer] is sized to the result of
      * [getProtectMessageOutputLength] and contains the ciphertext.
      */
-    public fun protectMessage(data: ByteArray): ProtectedMessage = withCallArena { arena ->
+    fun protectMessage(data: ByteArray): ProtectedMessage = withCallArena { arena ->
         val inBuf = arena.allocate(data.size.toLong())
         inBuf.copyFrom(MemorySegment.ofArray(data))
         val outSize = getProtectMessageOutputLength(data.size)
@@ -231,7 +231,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
     }
 
     /** Decrypt a message received from the game server. */
-    public fun unprotectMessage(data: ByteArray): ByteArray = withCallArena { arena ->
+    fun unprotectMessage(data: ByteArray): ByteArray = withCallArena { arena ->
         val inBuf = arena.allocate(data.size.toLong())
         inBuf.copyFrom(MemorySegment.ofArray(data))
         // Conservative estimate: decrypted output is always smaller than input.
@@ -257,7 +257,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
 
     // region PeerToPeer mode
 
-    public fun addNotifyMessageToPeer(callback: (MessageToPeerInfo) -> Unit): NotificationHandle {
+    fun addNotifyMessageToPeer(callback: (MessageToPeerInfo) -> Unit): NotificationHandle {
         val invoker = EosCallback { data ->
             // EOS_AntiCheatCommon_OnMessageToClientCallbackInfo: ClientData@0, ClientHandle@8, MessageData@16, MessageDataSizeBytes@24
             val clientHandle = ClientHandle(data.getInt64(8))
@@ -285,7 +285,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyMessageToPeer(handle: NotificationHandle) {
+    fun removeNotifyMessageToPeer(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatClient_RemoveNotifyMessageToPeer",
             listOf(handle(), handle.notificationId),
@@ -294,7 +294,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyPeerActionRequired(
+    fun addNotifyPeerActionRequired(
         callback: (PeerActionRequiredInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
@@ -321,7 +321,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyPeerActionRequired(handle: NotificationHandle) {
+    fun removeNotifyPeerActionRequired(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatClient_RemoveNotifyPeerActionRequired",
             listOf(handle(), handle.notificationId),
@@ -330,7 +330,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyPeerAuthStatusChanged(
+    fun addNotifyPeerAuthStatusChanged(
         callback: (PeerAuthStatusChangedInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
@@ -353,7 +353,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyPeerAuthStatusChanged(handle: NotificationHandle) {
+    fun removeNotifyPeerAuthStatusChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatClient_RemoveNotifyPeerAuthStatusChanged",
             listOf(handle(), handle.notificationId),
@@ -362,7 +362,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun registerPeer(
+    fun registerPeer(
         peerHandle: ClientHandle,
         clientType: ClientType,
         clientPlatform: ClientPlatform = ClientPlatform.Unknown,
@@ -384,7 +384,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         )
     }
 
-    public fun unregisterPeer(peerHandle: ClientHandle): EosResult = withCallArena { arena ->
+    fun unregisterPeer(peerHandle: ClientHandle): EosResult = withCallArena { arena ->
         val options = AntiCheatClientUnregisterPeerOptions(peerHandle)
         EosResult.fromValue(
             Native.invoke(
@@ -396,7 +396,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         )
     }
 
-    public fun receiveMessageFromPeer(peerHandle: ClientHandle, data: ByteArray): EosResult = withCallArena { arena ->
+    fun receiveMessageFromPeer(peerHandle: ClientHandle, data: ByteArray): EosResult = withCallArena { arena ->
         val buf = arena.allocate(data.size.toLong())
         buf.copyFrom(MemorySegment.ofArray(data))
         val options = AntiCheatClientReceiveMessageFromPeerOptions(peerHandle, data.size, buf)
@@ -410,7 +410,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         )
     }
 
-    public fun addNotifyClientIntegrityViolated(
+    fun addNotifyClientIntegrityViolated(
         callback: (ClientIntegrityViolatedInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
@@ -435,7 +435,7 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyClientIntegrityViolated(handle: NotificationHandle) {
+    fun removeNotifyClientIntegrityViolated(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatClient_RemoveNotifyClientIntegrityViolated",
             listOf(handle(), handle.notificationId),
@@ -446,10 +446,10 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
 
     // endregion
 
-    public companion object {
-        public const val MAX_MESSAGE_SIZE: Int = 512
-        public const val MIN_AUTHENTICATION_TIMEOUT: Int = 40
-        public const val MAX_AUTHENTICATION_TIMEOUT: Int = 120
-        public const val PEER_SELF_RAW: Long = -1L
+    companion object {
+        const val MAX_MESSAGE_SIZE: Int = 512
+        const val MIN_AUTHENTICATION_TIMEOUT: Int = 40
+        const val MAX_AUTHENTICATION_TIMEOUT: Int = 120
+        const val PEER_SELF_RAW: Long = -1L
     }
 }

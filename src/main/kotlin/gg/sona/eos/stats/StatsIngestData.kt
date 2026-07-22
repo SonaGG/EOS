@@ -9,7 +9,7 @@ import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
-internal class StatsIngestData(public val statName: String, public val ingestAmount: Int) : StructWriter {
+internal class StatsIngestData(val statName: String, val ingestAmount: Int) : StructWriter {
     override fun writeTo(arena: Arena): MemorySegment {
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, API_LATEST)

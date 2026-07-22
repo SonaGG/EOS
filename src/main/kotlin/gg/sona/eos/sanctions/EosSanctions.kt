@@ -19,13 +19,15 @@ import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
 import gg.sona.eos.common.ProductUserId
 import gg.sona.eos.internal.*
-import java.lang.foreign.*
+import java.lang.foreign.FunctionDescriptor
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
 
 /**
  * Sanctions interface. Query player sanctions and submit appeals.
  */
-public class EosSanctions internal constructor(private val platform: EosPlatform) {
+class EosSanctions internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -35,7 +37,7 @@ public class EosSanctions internal constructor(private val platform: EosPlatform
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryActivePlayerSanctions(targetUserId: ProductUserId): CompletableFuture<EosResult> =
+    fun queryActivePlayerSanctions(targetUserId: ProductUserId): CompletableFuture<EosResult> =
         asyncCall(
             "EOS_Sanctions_QueryActivePlayerSanctions",
             SanctionsQueryActivePlayerSanctionsOptions(targetUserId),
@@ -62,7 +64,7 @@ public class EosSanctions internal constructor(private val platform: EosPlatform
         return future
     }
 
-    public fun getPlayerSanctionCount(targetUserId: ProductUserId): Int {
+    fun getPlayerSanctionCount(targetUserId: ProductUserId): Int {
         val options = SanctionsGetPlayerSanctionCountOptions(targetUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -75,7 +77,7 @@ public class EosSanctions internal constructor(private val platform: EosPlatform
         }
     }
 
-    public fun copyPlayerSanctionByIndex(targetUserId: ProductUserId, index: Int): Sanction? =
+    fun copyPlayerSanctionByIndex(targetUserId: ProductUserId, index: Int): Sanction? =
         withCallArena { arena ->
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
             val options = SanctionsCopyPlayerSanctionByIndexOptions(targetUserId, index)
@@ -98,7 +100,7 @@ public class EosSanctions internal constructor(private val platform: EosPlatform
             sanction
         }
 
-    public fun createPlayerSanctionAppeal(
+    fun createPlayerSanctionAppeal(
         targetUserId: ProductUserId,
         sanctionId: String,
         reason: String,

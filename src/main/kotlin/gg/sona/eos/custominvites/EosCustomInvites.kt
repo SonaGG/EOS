@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Custom Invites interface. Game-defined invite payloads.
  */
-public class EosCustomInvites internal constructor(private val platform: EosPlatform) {
+class EosCustomInvites internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -39,7 +39,7 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
     }
 
     /** Set the custom invite payload for the local user. */
-    public fun setCustomInvite(
+    fun setCustomInvite(
         localUserId: ProductUserId,
         payload: String,
     ): EosResult = withCallArena { arena ->
@@ -55,7 +55,7 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
     }
 
     /** Send the previously-set custom invite to a list of recipients. */
-    public fun sendCustomInvite(
+    fun sendCustomInvite(
         localUserId: ProductUserId,
         recipients: List<ProductUserId>,
     ): CompletableFuture<EosResult> {
@@ -76,7 +76,7 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         return future
     }
 
-    public fun addNotifyCustomInviteReceived(
+    fun addNotifyCustomInviteReceived(
         callback: (CustomInviteReceivedInfo) -> Unit,
     ): NotificationHandle = registerCustomInviteListener(
         "EOS_CustomInvites_AddNotifyCustomInviteReceived",
@@ -89,7 +89,7 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         callback(CustomInviteReceivedInfo(inviteId, fromUserId, payload))
     }
 
-    public fun addNotifyCustomInviteAccepted(
+    fun addNotifyCustomInviteAccepted(
         callback: (CustomInviteAcceptedInfo) -> Unit,
     ): NotificationHandle = registerCustomInviteListener(
         "EOS_CustomInvites_AddNotifyCustomInviteAccepted",
@@ -102,7 +102,7 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         callback(CustomInviteAcceptedInfo(inviteId, fromUserId, payload))
     }
 
-    public fun addNotifyCustomInviteRejected(
+    fun addNotifyCustomInviteRejected(
         callback: (CustomInviteRejectedInfo) -> Unit,
     ): NotificationHandle = registerCustomInviteListener(
         "EOS_CustomInvites_AddNotifyCustomInviteRejected",
@@ -115,23 +115,23 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         callback(CustomInviteRejectedInfo(inviteId, fromUserId, payload))
     }
 
-    public fun removeNotifyCustomInviteReceived(handle: NotificationHandle) =
+    fun removeNotifyCustomInviteReceived(handle: NotificationHandle) =
         unregisterCustomInviteListener(
             "EOS_CustomInvites_RemoveNotifyCustomInviteReceived", handle
         )
 
-    public fun removeNotifyCustomInviteAccepted(handle: NotificationHandle) =
+    fun removeNotifyCustomInviteAccepted(handle: NotificationHandle) =
         unregisterCustomInviteListener(
             "EOS_CustomInvites_RemoveNotifyCustomInviteAccepted", handle
         )
 
-    public fun removeNotifyCustomInviteRejected(handle: NotificationHandle) =
+    fun removeNotifyCustomInviteRejected(handle: NotificationHandle) =
         unregisterCustomInviteListener(
             "EOS_CustomInvites_RemoveNotifyCustomInviteRejected", handle
         )
 
     /** Finalize a previously-received custom invite (mark as handled). */
-    public fun finalizeInvite(
+    fun finalizeInvite(
         localUserId: ProductUserId,
         inviteId: String,
         processingResult: EosCustomInviteProcessingResult,

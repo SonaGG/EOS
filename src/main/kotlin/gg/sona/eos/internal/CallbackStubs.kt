@@ -15,11 +15,8 @@
  */
 package gg.sona.eos.internal
 
-import java.lang.foreign.Arena
-import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.MemoryLayout
-import java.lang.foreign.MemorySegment
-import java.lang.foreign.ValueLayout
+import gg.sona.eos.internal.CallbackStubs.release
+import java.lang.foreign.*
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
@@ -118,7 +115,7 @@ internal object CallbackStubs {
     private fun logUpcallException(t: Throwable) {
         System.err.println(
             "[eos] Uncaught exception in a native callback was suppressed to avoid crossing " +
-                "back into native code (undefined behavior) and crashing the JVM:"
+                    "back into native code (undefined behavior) and crashing the JVM:"
         )
         t.printStackTrace()
     }
@@ -156,18 +153,19 @@ internal object CallbackStubs {
     }
 
     private fun javaClassFor(layout: MemoryLayout?): Class<*> = when (layout) {
-        null -> java.lang.Void.TYPE
+        null -> Void.TYPE
         is ValueLayout -> when (layout.carrier()) {
             java.lang.Boolean.TYPE -> java.lang.Boolean.TYPE
             java.lang.Byte.TYPE -> java.lang.Byte.TYPE
             java.lang.Short.TYPE -> java.lang.Short.TYPE
-            java.lang.Character.TYPE -> java.lang.Integer.TYPE
-            java.lang.Integer.TYPE -> java.lang.Integer.TYPE
+            Character.TYPE -> Integer.TYPE
+            Integer.TYPE -> Integer.TYPE
             java.lang.Long.TYPE -> java.lang.Long.TYPE
             java.lang.Float.TYPE -> java.lang.Float.TYPE
             java.lang.Double.TYPE -> java.lang.Double.TYPE
             else -> MemorySegment::class.java
         }
+
         else -> MemorySegment::class.java
     }
 }

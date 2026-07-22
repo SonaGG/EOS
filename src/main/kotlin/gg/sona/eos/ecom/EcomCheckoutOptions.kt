@@ -21,8 +21,10 @@ internal class EcomCheckoutOptions(
         val entrySegs = entries.map { EcomCheckoutEntry(it.offerId).writeTo(arena) }
         val arr = arena.allocate(EcomCheckoutEntry.LAYOUT, entrySegs.size.toLong())
         entrySegs.forEachIndexed { i, s ->
-            val dst = arr.asSlice(i.toLong() * EcomCheckoutEntry.LAYOUT.byteSize(),
-                EcomCheckoutEntry.LAYOUT.byteSize())
+            val dst = arr.asSlice(
+                i.toLong() * EcomCheckoutEntry.LAYOUT.byteSize(),
+                EcomCheckoutEntry.LAYOUT.byteSize()
+            )
             MemorySegment.copy(s, 0, dst, 0, EcomCheckoutEntry.LAYOUT.byteSize())
         }
         seg.setInt64(16, arr.address())

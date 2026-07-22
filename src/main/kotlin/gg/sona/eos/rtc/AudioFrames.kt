@@ -15,15 +15,15 @@ import java.lang.foreign.ValueLayout
  * Corresponds to `EOS_RTCAudio_AudioBuffer`: ApiVersion@0, Frames@8, FramesCount@16, SampleRate@20,
  * Channels@24.
  */
-public class AudioFrames internal constructor(bufferPtr: MemorySegment) {
+class AudioFrames internal constructor(bufferPtr: MemorySegment) {
     private val buffer: MemorySegment = bufferPtr.reinterpret(32)
 
     /** Frames per channel, not the total sample count. */
-    public val framesCount: Int get() = buffer.getInt32(16)
+    val framesCount: Int get() = buffer.getInt32(16)
 
-    public val sampleRate: Int get() = buffer.getInt32(20)
+    val sampleRate: Int get() = buffer.getInt32(20)
 
-    public val channels: Int get() = buffer.getInt32(24)
+    val channels: Int get() = buffer.getInt32(24)
 
     /**
      * Root-mean-square amplitude over the whole buffer, normalised to 0.0..1.0.
@@ -31,7 +31,7 @@ public class AudioFrames internal constructor(bufferPtr: MemorySegment) {
      * RMS rather than peak: peak reacts to a single click or a keyboard knock, where RMS tracks
      * sustained energy, which is what distinguishes speech from room noise.
      */
-    public fun rms(): Float {
+    fun rms(): Float {
         val frames = buffer.get(ValueLayout.ADDRESS, 8)
         val samples = framesCount * channels
 

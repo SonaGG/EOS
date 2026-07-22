@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Player Data Storage interface. Per-user cloud save files.
  */
-public class EosPlayerDataStorage internal constructor(private val platform: EosPlatform) {
+class EosPlayerDataStorage internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -37,7 +37,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryFile(
+    fun queryFile(
         localUserId: ProductUserId,
         filename: String,
     ): CompletableFuture<EosResult> {
@@ -58,7 +58,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         return future
     }
 
-    public fun queryFileList(
+    fun queryFileList(
         localUserId: ProductUserId,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
@@ -84,7 +84,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
      * `EOS_PlayerDataStorage_GetFileMetadataCount` returns an [EosResult] and reports
      * the count through an `int32_t*` out parameter - it is not the return value.
      */
-    public fun getFileMetadataCount(localUserId: ProductUserId): Int {
+    fun getFileMetadataCount(localUserId: ProductUserId): Int {
         val options = PlayerDataStorageGetFileMetadataCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -101,7 +101,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         }
     }
 
-    public fun copyFileMetadataByFilename(
+    fun copyFileMetadataByFilename(
         localUserId: ProductUserId,
         filename: String,
     ): FileMetadata? = copyMetadata(
@@ -109,7 +109,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         PlayerDataStorageCopyFileMetadataByFilenameOptions(localUserId, filename)
     )
 
-    public fun copyFileMetadataAtIndex(
+    fun copyFileMetadataAtIndex(
         localUserId: ProductUserId,
         index: Int,
     ): FileMetadata? = copyMetadata(
@@ -144,7 +144,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
             meta
         }
 
-    public fun deleteFile(
+    fun deleteFile(
         localUserId: ProductUserId,
         filename: String,
     ): CompletableFuture<EosResult> {
@@ -165,7 +165,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         return future
     }
 
-    public fun duplicateFile(
+    fun duplicateFile(
         localUserId: ProductUserId,
         sourceFilename: String,
         destinationFilename: String,
@@ -187,7 +187,7 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         return future
     }
 
-    public fun deleteCache(localUserId: ProductUserId? = null): CompletableFuture<EosResult> {
+    fun deleteCache(localUserId: ProductUserId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
         // EOS_PlayerDataStorage_DeleteCacheCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->

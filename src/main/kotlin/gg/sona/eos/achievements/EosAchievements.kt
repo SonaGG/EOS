@@ -19,12 +19,7 @@ import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
 import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.ProductUserId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.withCallArena
+import gg.sona.eos.internal.*
 import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
@@ -33,7 +28,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * Achievements interface.
  */
-public class EosAchievements internal constructor(private val platform: EosPlatform) {
+class EosAchievements internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -43,7 +38,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryDefinitions(
+    fun queryDefinitions(
         localUserId: ProductUserId? = null,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
@@ -63,7 +58,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         return future
     }
 
-    public fun getAchievementDefinitionCount(): Int {
+    fun getAchievementDefinitionCount(): Int {
         val options = AchievementsGetAchievementDefinitionCountOptions()
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -76,7 +71,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         }
     }
 
-    public fun copyAchievementDefinitionByIndex(index: Int): AchievementDefinition? =
+    fun copyAchievementDefinitionByIndex(index: Int): AchievementDefinition? =
         withCallArena { arena ->
             val options = AchievementsCopyAchievementDefinitionByIndexOptions(index)
             val outPtr = arena.allocate(ValueLayout.ADDRESS)
@@ -99,7 +94,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
             def
         }
 
-    public fun copyAchievementDefinitionById(id: String): AchievementDefinition? = withCallArena { arena ->
+    fun copyAchievementDefinitionById(id: String): AchievementDefinition? = withCallArena { arena ->
         val options = AchievementsCopyAchievementDefinitionByIdOptions(id)
         val outPtr = arena.allocate(ValueLayout.ADDRESS)
         val result = EosResult.fromValue(
@@ -121,7 +116,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         def
     }
 
-    public fun queryPlayerAchievements(
+    fun queryPlayerAchievements(
         targetUserId: ProductUserId,
         localUserId: ProductUserId? = null,
     ): CompletableFuture<QueryPlayerAchievementsResult> {
@@ -145,7 +140,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         return future
     }
 
-    public fun getPlayerAchievementCount(userId: ProductUserId): Int {
+    fun getPlayerAchievementCount(userId: ProductUserId): Int {
         val options = AchievementsGetPlayerAchievementCountOptions(userId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
@@ -158,7 +153,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         }
     }
 
-    public fun copyPlayerAchievementByIndex(
+    fun copyPlayerAchievementByIndex(
         targetUserId: ProductUserId,
         index: Int,
         localUserId: ProductUserId? = null,
@@ -186,7 +181,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         pa
     }
 
-    public fun copyPlayerAchievementByAchievementId(
+    fun copyPlayerAchievementByAchievementId(
         targetUserId: ProductUserId,
         achievementId: String,
         localUserId: ProductUserId? = null,
@@ -215,7 +210,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
     }
 
     /** Unlock one or more achievements. */
-    public fun unlockAchievements(
+    fun unlockAchievements(
         userId: ProductUserId,
         achievementIds: List<String>,
     ): CompletableFuture<UnlockAchievementsResult> {
@@ -244,7 +239,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
      * returned [NotificationHandle] must be passed to
      * [removeNotifyAchievementsUnlocked] when no longer needed.
      */
-    public fun addNotifyAchievementsUnlocked(
+    fun addNotifyAchievementsUnlocked(
         callback: (AchievementUnlockedInfo) -> Unit,
     ): NotificationHandle {
         // EOS_Achievements_OnAchievementsUnlockedCallbackV2Info: ClientData@0, UserId@8, AchievementId@16, UnlockTime@24
@@ -271,7 +266,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyAchievementsUnlocked(handle: NotificationHandle) {
+    fun removeNotifyAchievementsUnlocked(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_Achievements_RemoveNotifyAchievementsUnlocked",
             listOf(handle(), handle.notificationId),
@@ -311,10 +306,12 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
             for (i in 0 until statThresholdsCount.toInt()) {
                 val item = MemorySegment.ofAddress(thresholdsPtr.address())
                     .asSlice(i.toLong() * StatThreshold.LAYOUT.byteSize(), StatThreshold.LAYOUT.byteSize())
-                list.add(StatThreshold(
-                    name = readString(item, 8),
-                    threshold = item.getInt32(16),
-                ))
+                list.add(
+                    StatThreshold(
+                        name = readString(item, 8),
+                        threshold = item.getInt32(16),
+                    )
+                )
             }
             list
         }
@@ -341,11 +338,13 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
             for (i in 0 until statInfoCount.toInt()) {
                 val item = MemorySegment.ofAddress(statInfoPtr.address())
                     .asSlice(i.toLong() * PlayerStatInfo.LAYOUT.byteSize(), PlayerStatInfo.LAYOUT.byteSize())
-                list.add(PlayerStatInfo(
-                    name = readString(item, 8),
-                    currentValue = item.getInt32(16),
-                    thresholdValue = item.getInt32(20),
-                ))
+                list.add(
+                    PlayerStatInfo(
+                        name = readString(item, 8),
+                        currentValue = item.getInt32(16),
+                        thresholdValue = item.getInt32(20),
+                    )
+                )
             }
             list
         }
@@ -361,7 +360,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         )
     }
 
-    public companion object {
-        public const val UNLOCK_TIME_UNDEFINED: Long = -1L
+    companion object {
+        const val UNLOCK_TIME_UNDEFINED: Long = -1L
     }
 }

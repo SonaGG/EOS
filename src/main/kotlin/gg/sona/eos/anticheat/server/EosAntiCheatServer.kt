@@ -48,7 +48,7 @@ import java.lang.foreign.ValueLayout
  * enforcement, and can log gameplay events for the Cerberus anti-cheat
  * feature.
  */
-public class EosAntiCheatServer internal constructor(private val platform: EosPlatform) {
+class EosAntiCheatServer internal constructor(private val platform: EosPlatform) {
 
     private fun handle(): Long {
         val fn = Native.downcall(
@@ -63,7 +63,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
      * with [addNotifyMessageToClient] and [addNotifyClientActionRequired]
      * before calling this function.
      */
-    public fun beginSession(
+    fun beginSession(
         registerTimeoutSeconds: Int = 60,
         serverName: String? = null,
         enableGameplayData: Boolean = true,
@@ -83,7 +83,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
     }
 
     /** End the gameplay session. */
-    public fun endSession(): EosResult = withCallArena { arena ->
+    fun endSession(): EosResult = withCallArena { arena ->
         val options = AntiCheatServerEndSessionOptions()
         EosResult.fromValue(
             Native.invoke(
@@ -95,7 +95,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun addNotifyMessageToClient(callback: (MessageToClientInfo) -> Unit): NotificationHandle {
+    fun addNotifyMessageToClient(callback: (MessageToClientInfo) -> Unit): NotificationHandle {
         val invoker = EosCallback { data ->
             // EOS_AntiCheatCommon_OnMessageToClientCallbackInfo: ClientData@0, ClientHandle@8, MessageData@16, MessageDataSizeBytes@24
             val clientHandle = ClientHandle(data.getInt64(8))
@@ -123,7 +123,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyMessageToClient(handle: NotificationHandle) {
+    fun removeNotifyMessageToClient(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatServer_RemoveNotifyMessageToClient",
             listOf(handle(), handle.notificationId),
@@ -132,7 +132,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyClientActionRequired(
+    fun addNotifyClientActionRequired(
         callback: (ClientActionRequiredInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
@@ -159,7 +159,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyClientActionRequired(handle: NotificationHandle) {
+    fun removeNotifyClientActionRequired(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatServer_RemoveNotifyClientActionRequired",
             listOf(handle(), handle.notificationId),
@@ -168,7 +168,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun addNotifyClientAuthStatusChanged(
+    fun addNotifyClientAuthStatusChanged(
         callback: (ClientAuthStatusChangedInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
@@ -191,7 +191,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         return NotificationHandle(notifId, handle.id)
     }
 
-    public fun removeNotifyClientAuthStatusChanged(handle: NotificationHandle) {
+    fun removeNotifyClientAuthStatusChanged(handle: NotificationHandle) {
         Native.invokeVoid(
             "EOS_AntiCheatServer_RemoveNotifyClientAuthStatusChanged",
             listOf(handle(), handle.notificationId),
@@ -200,7 +200,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         CallbackStubs.release(handle.callbackId)
     }
 
-    public fun registerClient(
+    fun registerClient(
         clientHandle: ClientHandle,
         clientType: ClientType,
         clientPlatform: ClientPlatform = ClientPlatform.Unknown,
@@ -220,7 +220,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun unregisterClient(clientHandle: ClientHandle): EosResult = withCallArena { arena ->
+    fun unregisterClient(clientHandle: ClientHandle): EosResult = withCallArena { arena ->
         val options = AntiCheatServerUnregisterClientOptions(clientHandle)
         EosResult.fromValue(
             Native.invoke(
@@ -232,7 +232,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun receiveMessageFromClient(clientHandle: ClientHandle, data: ByteArray): EosResult =
+    fun receiveMessageFromClient(clientHandle: ClientHandle, data: ByteArray): EosResult =
         withCallArena { arena ->
             val buf = arena.allocate(data.size.toLong())
             buf.copyFrom(MemorySegment.ofArray(data))
@@ -248,7 +248,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         }
 
     /** Sets or updates client details including admin status and input device. */
-    public fun setClientDetails(
+    fun setClientDetails(
         clientHandle: ClientHandle,
         flags: Set<ClientFlags> = emptySet(),
         inputMethod: ClientInput = ClientInput.Unknown,
@@ -266,7 +266,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
     }
 
     /** Sets or updates a game session identifier attached to subsequent data. */
-    public fun setGameSessionId(gameSessionId: String): EosResult = withCallArena { arena ->
+    fun setGameSessionId(gameSessionId: String): EosResult = withCallArena { arena ->
         val options = AntiCheatServerSetGameSessionIdOptions(gameSessionId)
         EosResult.fromValue(
             Native.invoke(
@@ -283,7 +283,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
      * to communicate (e.g. loading a new level). The bIsNetworkActive flag
      * must be set back to true when the user returns to normal gameplay.
      */
-    public fun setClientNetworkState(clientHandle: ClientHandle, isNetworkActive: Boolean): EosResult =
+    fun setClientNetworkState(clientHandle: ClientHandle, isNetworkActive: Boolean): EosResult =
         withCallArena { arena ->
             val options = AntiCheatServerSetClientNetworkStateOptions(clientHandle, isNetworkActive)
             EosResult.fromValue(
@@ -300,7 +300,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
      * Calculate the required output buffer size to encrypt a message of
      * [dataLengthBytes] via [protectMessage].
      */
-    public fun getProtectMessageOutputLength(dataLengthBytes: Int): Int = withCallArena { arena ->
+    fun getProtectMessageOutputLength(dataLengthBytes: Int): Int = withCallArena { arena ->
         val outPtr = arena.allocate(ValueLayout.JAVA_INT)
         val options = AntiCheatServerGetProtectMessageOutputLengthOptions(dataLengthBytes)
         EosResult.fromValue(
@@ -314,7 +314,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         outPtr.get(ValueLayout.JAVA_INT, 0)
     }
 
-    public fun protectMessage(clientHandle: ClientHandle, data: ByteArray): ByteArray = withCallArena { arena ->
+    fun protectMessage(clientHandle: ClientHandle, data: ByteArray): ByteArray = withCallArena { arena ->
         val inBuf = arena.allocate(data.size.toLong())
         inBuf.copyFrom(MemorySegment.ofArray(data))
         val outSize = getProtectMessageOutputLength(data.size)
@@ -335,7 +335,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         arr
     }
 
-    public fun unprotectMessage(clientHandle: ClientHandle, data: ByteArray): ByteArray = withCallArena { arena ->
+    fun unprotectMessage(clientHandle: ClientHandle, data: ByteArray): ByteArray = withCallArena { arena ->
         val inBuf = arena.allocate(data.size.toLong())
         inBuf.copyFrom(MemorySegment.ofArray(data))
         val outSize = data.size
@@ -362,7 +362,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
      * Register a custom gameplay event. Must be called before [beginSession]
      * for the first time.
      */
-    public fun registerEvent(
+    fun registerEvent(
         eventId: UInt,
         eventName: String,
         eventType: EventType,
@@ -384,7 +384,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logEvent(
+    fun logEvent(
         clientHandle: ClientHandle,
         eventId: UInt,
         params: List<EventParamPair>,
@@ -405,7 +405,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logGameRoundStart(
+    fun logGameRoundStart(
         sessionIdentifier: String? = null,
         levelName: String? = null,
         modeName: String? = null,
@@ -425,7 +425,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logGameRoundEnd(winningTeamId: UInt = 0u): EosResult = withCallArena { arena ->
+    fun logGameRoundEnd(winningTeamId: UInt = 0u): EosResult = withCallArena { arena ->
         val options = AntiCheatServerLogGameRoundEndOptions(winningTeamId)
         EosResult.fromValue(
             Native.invoke(
@@ -437,7 +437,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logPlayerSpawn(
+    fun logPlayerSpawn(
         playerHandle: ClientHandle,
         teamId: UInt = 0u,
         characterId: UInt = 0u,
@@ -453,7 +453,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logPlayerDespawn(playerHandle: ClientHandle): EosResult = withCallArena { arena ->
+    fun logPlayerDespawn(playerHandle: ClientHandle): EosResult = withCallArena { arena ->
         val options = AntiCheatServerLogPlayerDespawnOptions(playerHandle)
         EosResult.fromValue(
             Native.invoke(
@@ -465,7 +465,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logPlayerRevive(
+    fun logPlayerRevive(
         revivedPlayerHandle: ClientHandle,
         reviverPlayerHandle: ClientHandle,
     ): EosResult = withCallArena { arena ->
@@ -480,7 +480,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logPlayerTick(
+    fun logPlayerTick(
         playerHandle: ClientHandle,
         position: Vec3f,
         viewRotation: Quat,
@@ -502,7 +502,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logPlayerUseWeapon(
+    fun logPlayerUseWeapon(
         playerHandle: ClientHandle,
         position: Vec3f,
         viewRotation: Quat,
@@ -524,7 +524,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logPlayerUseAbility(
+    fun logPlayerUseAbility(
         playerHandle: ClientHandle,
         abilityId: UInt,
         abilityDurationMs: UInt = 0u,
@@ -543,7 +543,7 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
         )
     }
 
-    public fun logPlayerTakeDamage(
+    fun logPlayerTakeDamage(
         victimPlayerHandle: ClientHandle,
         victimPosition: Vec3f,
         victimViewRotation: Quat,
@@ -581,52 +581,12 @@ public class EosAntiCheatServer internal constructor(private val platform: EosPl
 
     // endregion
 
-    public companion object {
-        public const val MAX_MESSAGE_SIZE: Int = 512
-        public const val MIN_REGISTER_TIMEOUT: Int = 10
-        public const val MAX_REGISTER_TIMEOUT: Int = 120
+    companion object {
+        const val MAX_MESSAGE_SIZE: Int = 512
+        const val MIN_REGISTER_TIMEOUT: Int = 10
+        const val MAX_REGISTER_TIMEOUT: Int = 120
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // endregion
