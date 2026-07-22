@@ -15,8 +15,12 @@
  */
 package gg.sona.eos.internal
 
+import gg.sona.eos.EosNatives
 import java.lang.foreign.*
 import java.lang.invoke.MethodHandle
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpResponse
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -42,10 +46,16 @@ internal object Native {
     // Declared above the init block on purpose: object properties initialize in declaration order,
     // and the block below loads the library through these fields.
     private val handles = ConcurrentHashMap<HandleKey, MethodHandle>()
-    private val extracted = ConcurrentHashMap<String, String>()
+    private val resolved = ConcurrentHashMap<String, String>()
 
     @Volatile
-    private var tempDir: Path? = null
+    private var cacheDir: Path? = null
+
+    private val httpClient: HttpClient by lazy {
+        HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build()
+    }
 
     init {
         lookup = loadNativeLibrary()
@@ -93,30 +103,17 @@ internal object Native {
     }
 
     /**
-     * Extracts a bundled file from `resources/natives` and returns its absolute path, or null when
-     * the resource is not bundled. Used for dependencies EOS loads by path rather than by linking,
-     * such as the Windows RTC XAudio redistributable.
+     * Downloads (once) and returns the absolute path to a native support file that EOS loads by
+     * path rather than by linking, such as the Windows RTC XAudio redistributable. The file is
+     * fetched from the configured [EosNatives.baseUrl] and cached on disk; subsequent calls reuse
+     * the cached copy.
+     *
+     * @throws IllegalStateException if no base URL is configured or the download fails.
      */
-    fun extractBundledFile(name: String): String? {
-        extracted[name]?.let { return it }
-
-        synchronized(extracted) {
-            extracted[name]?.let { return it }
-
-            val stream = Native::class.java.classLoader.getResourceAsStream("natives/$name")
-                ?: return null
-
-            val target = tempDir().resolve(name)
-            stream.use { Files.copy(it, target, StandardCopyOption.REPLACE_EXISTING) }
-
-            val path = target.toAbsolutePath().toString()
-            extracted[name] = path
-            return path
-        }
-    }
+    fun nativeFilePath(name: String): String = downloadAndCache(name).toAbsolutePath().toString()
 
     private fun loadNativeLibrary(): SymbolLookup {
-        // Prefer a system-installed SDK, then fall back to the platform native bundled in resources.
+        // Prefer a system-installed SDK, then fall back to downloading the platform native.
         val installed = listOf("EOSSDK", "EOSSDK-Win64-Shipping", "EOSSDK-Mac-Shipping", "EOSSDK-Linux-Shipping")
         for (name in installed) {
             try {
@@ -128,25 +125,69 @@ internal object Native {
                 // try next
             }
         }
-        extractBundledLibrary()
+        System.load(downloadAndCache(nativeLibraryName()).toAbsolutePath().toString())
         return SymbolLookup.loaderLookup()
     }
 
-    private fun extractBundledLibrary() {
-        val name = bundledLibraryName()
-        val stream = Native::class.java.classLoader.getResourceAsStream("natives/$name")
-            ?: error("No bundled EOS native library '$name' found in resources/natives")
+    /**
+     * Returns the on-disk path to [name], downloading it from [EosNatives.baseUrl] into the cache
+     * directory if it is not already cached. Downloads are written to a temporary file and moved
+     * into place atomically so a partial download can never be mistaken for a complete one.
+     */
+    private fun downloadAndCache(name: String): Path {
+        resolved[name]?.let { return Path.of(it) }
 
-        val target: Path = tempDir().resolve(name)
-        stream.use { Files.copy(it, target, StandardCopyOption.REPLACE_EXISTING) }
+        synchronized(resolved) {
+            resolved[name]?.let { return Path.of(it) }
 
-        val path = target.toAbsolutePath().toString()
-        extracted[name] = path
-        System.load(path)
+            val target = cacheDir().resolve(name)
+            if (Files.isRegularFile(target) && Files.size(target) > 0) {
+                resolved[name] = target.toString()
+                return target
+            }
+
+            val base = EosNatives.baseUrl?.trim()?.takeIf { it.isNotEmpty() } ?: error(
+                "No EOS native binary base URL is configured, so '$name' cannot be located. " +
+                        "This library does not distribute the EOS SDK binaries (they are owned by " +
+                        "Epic Games and covered by Epic's own license). Set EosNatives.baseUrl (or the " +
+                        "eos.natives.baseUrl system property / EOS_NATIVES_BASE_URL environment variable) " +
+                        "to a URL you are licensed to fetch the binaries from, or install the EOS SDK " +
+                        "system-wide."
+            )
+
+            val url = base.trimEnd('/') + "/" + name
+            val tmp = Files.createTempFile(target.parent, "$name.", ".part")
+            try {
+                val response = httpClient.send(
+                    java.net.http.HttpRequest.newBuilder(URI.create(url)).GET().build(),
+                    HttpResponse.BodyHandlers.ofFile(tmp)
+                )
+                if (response.statusCode() !in 200..299) {
+                    error("Failed to download EOS native '$name' from $url: HTTP ${response.statusCode()}")
+                }
+                if (Files.size(tmp) == 0L) {
+                    error("Downloaded EOS native '$name' from $url is empty")
+                }
+                try {
+                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+                } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING)
+                }
+            } catch (e: Exception) {
+                runCatching { Files.deleteIfExists(tmp) }
+                if (e is IllegalStateException) throw e
+                throw IllegalStateException("Failed to download EOS native '$name' from $url", e)
+            } finally {
+                runCatching { Files.deleteIfExists(tmp) }
+            }
+
+            resolved[name] = target.toString()
+            return target
+        }
     }
 
-    /** The bundled native library filename for the current OS. */
-    private fun bundledLibraryName(): String {
+    /** The native library filename for the current OS. */
+    private fun nativeLibraryName(): String {
         val os = System.getProperty("os.name").lowercase()
         return when {
             os.contains("win") -> "EOSSDK-Win64-Shipping.dll"
@@ -155,22 +196,19 @@ internal object Native {
         }
     }
 
-    private fun tempDir(): Path {
-        tempDir?.let { return it }
+    private fun cacheDir(): Path {
+        cacheDir?.let { return it }
 
         synchronized(this) {
-            tempDir?.let { return it }
+            cacheDir?.let { return it }
 
-            val dir = Files.createTempDirectory("eos-natives-")
-            Runtime.getRuntime().addShutdownHook(
-                Thread {
-                    runCatching {
-                        Files.walk(dir).sorted(Comparator.reverseOrder())
-                            .forEach { Files.deleteIfExists(it) }
-                    }
-                }
-            )
-            tempDir = dir
+            val dir = EosNatives.cacheDir
+                ?: System.getProperty("user.home")
+                    ?.let { Path.of(it, ".cache", "eos-natives") }
+                ?: Files.createTempDirectory("eos-natives-")
+
+            Files.createDirectories(dir)
+            cacheDir = dir
             return dir
         }
     }

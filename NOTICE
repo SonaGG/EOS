@@ -1,0 +1,34 @@
+EOS for Kotlin
+Copyright 2026 Sona Softworks LLC
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+------------------------------------------------------------------------------
+Epic Online Services (EOS) SDK
+------------------------------------------------------------------------------
+
+These Kotlin bindings link against the Epic Online Services (EOS) SDK, which is
+proprietary software owned by Epic Games, Inc. The EOS SDK is NOT covered by the
+Apache License, Version 2.0. It is licensed separately under the Epic Online
+Services SDK license and the Epic Games Developer Agreement.
+
+This project does NOT distribute, bundle, or redistribute any EOS SDK binary
+(EOSSDK-Win64-Shipping.dll, libEOSSDK-Linux-Shipping.so,
+libEOSSDK-Mac-Shipping.dylib, xaudio2_9redist.dll, or any other EOS SDK file).
+
+No download source for these binaries is configured or provided by default. To
+use this library you must:
+
+  1. Obtain the EOS SDK directly from Epic Games under Epic's terms, and
+  2. Configure a location you are licensed to fetch the binaries from
+     (see EosNatives.baseUrl in the documentation).
+
+You are solely responsible for complying with Epic Games' license terms when
+obtaining, hosting, downloading, and using the EOS SDK. Nothing in this project
+grants you any right to the EOS SDK.
+
+The names "Epic Online Services", "EOS", and "Epic Games" are trademarks or
+registered trademarks of Epic Games, Inc.
+
+xaudio2_9redist.dll is a Microsoft redistributable, subject to Microsoft's own
+license terms, and is likewise not distributed by this project.

@@ -20,17 +20,19 @@ class EosP2PSocketId(val name: String) {
         val seg = arena.allocate(LAYOUT)
         seg.setInt32(0, 1)
         val bytes = name.toByteArray(Charsets.UTF_8)
-        for (i in 0 until 32) {
-            seg.set(ValueLayout.JAVA_BYTE, 4L + i, if (i < bytes.size) bytes[i] else 0)
+        val count = minOf(bytes.size, 32)
+        for (i in 0 until count) {
+            seg.set(ValueLayout.JAVA_BYTE, 4L + i, bytes[i])
         }
+        seg.set(ValueLayout.JAVA_BYTE, 4L + count, 0)
         return seg
     }
 
     companion object {
         internal val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(0), ValueLayout.JAVA_BYTE
-        ).withByteAlignment(1)
-            // The fixed-size char[33] is laid out as 33 bytes
-            .withName("EOS_P2P_SocketId")
+            ValueLayout.JAVA_INT.withName("ApiVersion"),
+            MemoryLayout.sequenceLayout(33, ValueLayout.JAVA_BYTE).withName("SocketName"),
+            MemoryLayout.paddingLayout(3),
+        ).withName("EOS_P2P_SocketId")
     }
 }

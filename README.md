@@ -148,10 +148,38 @@ val notif = platform.rtc.addNotifyParticipantStatusChanged(userId, "party-123") 
 
 ## Native library
 
+**This library does not distribute the EOS SDK binaries.** The EOS SDK is
+proprietary software owned by Epic Games, covered by the Epic Online
+Services SDK license / Developer Agreement — not by the Apache 2.0 license
+that covers these Kotlin bindings. You must supply the binaries yourself and
+comply with Epic's terms. See [NOTICE](NOTICE).
+
 The shared library is loaded automatically from one of:
 
-1. `System.loadLibrary("EOSSDK")` - if installed system-wide.
-2. `resources/natives/` inside the project's JAR - extracted to a temp
-   file at startup. Place the appropriate binary here for your target
-   platform (`EOSSDK-Win64-Shipping.dll`, `libEOSSDK-Linux-Shipping.so`,
-   or `libEOSSDK-Mac-Shipping.dylib`).
+1. `System.loadLibrary("EOSSDK")` — if installed system-wide.
+2. Downloaded at runtime from a URL you configure, then cached on disk and
+   reused on subsequent runs. **No download URL is shipped by default.**
+
+To use the download path, point the loader at a location you are licensed to
+fetch the binaries from, before your first EOS call:
+
+```kotlin
+import gg.sona.eos.EosNatives
+
+EosNatives.baseUrl = "https://your-host.example.com/eos"
+```
+
+Or without code changes, via the `eos.natives.baseUrl` system property or the
+`EOS_NATIVES_BASE_URL` environment variable.
+
+Files are fetched from `"$baseUrl/<name>"`, where `<name>` is the platform
+binary (`EOSSDK-Win64-Shipping.dll`, `libEOSSDK-Linux-Shipping.so`, or
+`libEOSSDK-Mac-Shipping.dylib`) and, when RTC is enabled on Windows,
+`xaudio2_9redist.dll`. Downloads are cached under
+`$user.home/.cache/eos-natives` by default; override with `EosNatives.cacheDir`
+or the `eos.natives.cacheDir` system property.
+
+---
+
+The names "Epic Online Services", "EOS", and "Epic Games" are trademarks or
+registered trademarks of Epic Games, Inc.

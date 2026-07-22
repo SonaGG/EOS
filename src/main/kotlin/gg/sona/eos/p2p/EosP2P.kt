@@ -110,14 +110,14 @@ class EosP2P internal constructor(private val platform: EosPlatform) {
     ): P2PReceivedPacket? = withCallArena { arena ->
         val options = P2PReceivePacketOptions(localUserId, maxDataSize, channel)
         val peerIdPtr = arena.allocate(ValueLayout.JAVA_LONG)
-        val socketIdPtr = arena.allocate(ValueLayout.ADDRESS)
+        val socketIdBuf = arena.allocate(EosP2PSocketId.LAYOUT)
         val channelPtr = arena.allocate(ValueLayout.JAVA_BYTE)
         val dataBuf = arena.allocate(maxDataSize.toLong())
         val bytesWrittenPtr = arena.allocate(ValueLayout.JAVA_INT)
         val result = EosResult.fromValue(
             Native.invoke(
                 "EOS_P2P_ReceivePacket",
-                listOf(handle(), options.writeTo(arena), peerIdPtr, socketIdPtr, channelPtr, dataBuf, bytesWrittenPtr),
+                listOf(handle(), options.writeTo(arena), peerIdPtr, socketIdBuf, channelPtr, dataBuf, bytesWrittenPtr),
                 listOf(
                     ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS
@@ -127,9 +127,7 @@ class EosP2P internal constructor(private val platform: EosPlatform) {
         )
         if (result != EosResult.Success) return@withCallArena null
         val peerId = ProductUserId(peerIdPtr.get(ValueLayout.JAVA_LONG, 0))
-        val socketIdPtrVal = socketIdPtr.get(ValueLayout.ADDRESS, 0)
-        val socketName = if (socketIdPtrVal.address() == 0L) "" else
-            socketIdPtrVal.reinterpret(Long.MAX_VALUE).getString(0)
+        val socketName = socketIdBuf.getString(4)
         val receivedChannel = channelPtr.get(ValueLayout.JAVA_BYTE, 0).toInt() and 0xff
         val bytesWritten = bytesWrittenPtr.get(ValueLayout.JAVA_INT, 0)
         val bytes = ByteArray(bytesWritten)
@@ -330,7 +328,7 @@ class EosP2P internal constructor(private val platform: EosPlatform) {
             val remoteUserId = ProductUserId(data.getInt64(16))
             val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
-                socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
+                socketPtr.reinterpret(Long.MAX_VALUE).getString(4)
             callback(PeerConnectionRequestInfo(localUserId, remoteUserId, EosP2PSocketId(socketName)))
         }
         val handle = CallbackStubs.register(invoker)
@@ -367,7 +365,7 @@ class EosP2P internal constructor(private val platform: EosPlatform) {
             val remoteUserId = ProductUserId(data.getInt64(16))
             val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
-                socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
+                socketPtr.reinterpret(Long.MAX_VALUE).getString(4)
             val type = EosConnectionEstablishedType.fromValue(data.getInt32(32))
             val netType = EosNetworkConnectionType.fromValue(data.getInt32(36))
             callback(
@@ -414,7 +412,7 @@ class EosP2P internal constructor(private val platform: EosPlatform) {
             val remoteUserId = ProductUserId(data.getInt64(16))
             val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
-                socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
+                socketPtr.reinterpret(Long.MAX_VALUE).getString(4)
             callback(PeerConnectionInterruptedInfo(localUserId, remoteUserId, EosP2PSocketId(socketName)))
         }
         val handle = CallbackStubs.register(invoker)
@@ -451,7 +449,7 @@ class EosP2P internal constructor(private val platform: EosPlatform) {
             val remoteUserId = ProductUserId(data.getInt64(16))
             val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
-                socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
+                socketPtr.reinterpret(Long.MAX_VALUE).getString(4)
             val reason = EosConnectionClosedReason.fromValue(data.getInt32(32))
             callback(PeerConnectionClosedInfo(localUserId, remoteUserId, EosP2PSocketId(socketName), reason))
         }
