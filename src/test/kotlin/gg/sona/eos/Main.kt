@@ -1,11 +1,9 @@
 package gg.sona.eos
 
-import gg.sona.eos.common.ProductUserId
 import gg.sona.eos.logging.EosLogCategory
 import gg.sona.eos.logging.EosLogLevel
 import gg.sona.eos.logging.EosLogMessage
 import gg.sona.eos.logging.EosLogging
-import gg.sona.eos.util.printResult
 
 fun logCallback(msg: EosLogMessage) {
     println("[${msg.category}] ${msg.level}: ${msg.message}")
@@ -44,7 +42,7 @@ fun main() {
             productName = EOSSdkConfig.GameName,
             productVersion = EOSSdkConfig.GameVersion
         )
-    ).printResult()
+    )
 
     EosLogging.setCallback(::logCallback)
     EosLogging.setLogLevel(EosLogCategory.AllCategories, EosLogLevel.Verbose)

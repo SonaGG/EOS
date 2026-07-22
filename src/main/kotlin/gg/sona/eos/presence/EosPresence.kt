@@ -15,36 +15,12 @@
  */
 package gg.sona.eos.presence
 
-import gg.sona.eos.NotificationHandle
-import gg.sona.eos.internal.setInt8
-import gg.sona.eos.internal.setInt16
-import gg.sona.eos.internal.setFloat
-import gg.sona.eos.internal.setDouble
-import gg.sona.eos.internal.setBool
-import gg.sona.eos.internal.getInt8
-import gg.sona.eos.internal.getInt16
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.getFloat
-import gg.sona.eos.internal.getDouble
-import gg.sona.eos.internal.getBool
-
 import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
+import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.EpicAccountId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.StructWriter
-import gg.sona.eos.internal.allocCString
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.withCallArena
-import java.lang.foreign.Arena
-import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.MemoryLayout
-import java.lang.foreign.MemorySegment
-import java.lang.foreign.ValueLayout
+import gg.sona.eos.internal.*
+import java.lang.foreign.*
 import java.util.concurrent.CompletableFuture
 
 /** Presence interface for online status and rich presence. */
@@ -118,69 +94,5 @@ public class EosPresence internal constructor(private val platform: EosPlatform)
             listOf(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
         )
         CallbackStubs.release(handle.callbackId)
-    }
-}
-
-public class PresenceChangedInfo(
-    public val localUserId: EpicAccountId,
-    public val presenceUserId: EpicAccountId,
-)
-
-internal class PresenceQueryPresenceOptions(
-    var localUserId: EpicAccountId,
-    var targetUserId: EpicAccountId,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, targetUserId.raw)
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-        )
-    }
-}
-
-/** `EOS_Presence_HasPresenceOptions`: ApiVersion@0, LocalUserId@8, TargetUserId@16. */
-internal class PresenceHasPresenceOptions(
-    var localUserId: EpicAccountId,
-    var targetUserId: EpicAccountId,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, targetUserId.raw)
-        return seg
-    }
-
-    companion object {
-        // EOS_PRESENCE_HASPRESENCE_API_LATEST
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
-        )
-    }
-}
-
-internal class PresenceAddNotifyOnPresenceChangedOptions(var localUserId: EpicAccountId) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, localUserId.raw)
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG,
-        )
     }
 }

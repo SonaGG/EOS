@@ -1,12 +1,10 @@
-import org.gradle.api.tasks.bundling.Jar
-
 plugins {
     kotlin("jvm") version "2.4.0"
     `maven-publish`
 }
 
 group = "gg.sona"
-version = "1.6.2-SNAPSHOT"
+version = "1.6.3-SNAPSHOT"
 
 repositories {
     mavenCentral()

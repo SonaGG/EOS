@@ -19,19 +19,8 @@ import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
 import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.ProductUserId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.StructWriter
-import gg.sona.eos.internal.allocCString
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.withCallArena
-import java.lang.foreign.Arena
+import gg.sona.eos.internal.*
 import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
@@ -165,100 +154,5 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
         val ptr = seg.get(ValueLayout.ADDRESS, offset)
         if (ptr.address() == 0L) return ""
         return ptr.reinterpret(Long.MAX_VALUE).getString(0)
-    }
-}
-
-/** Login status on an integrated platform. */
-public enum class EosIntegratedPlatformLoginStatus(val value: Int) {
-    NotLoggedIn(0),
-    LoggedIn(1);
-
-    public companion object {
-        internal fun fromValue(v: Int): EosIntegratedPlatformLoginStatus =
-            entries.firstOrNull { it.value == v } ?: NotLoggedIn
-    }
-}
-
-public class UserLoginStatusChangedInfo(
-    public val localUserId: ProductUserId,
-    public val previousPlatform: String,
-    public val currentPlatform: String,
-    public val previousStatus: EosIntegratedPlatformLoginStatus,
-    public val currentStatus: EosIntegratedPlatformLoginStatus,
-)
-
-public class UserPreLogoutInfo(
-    public val localUserId: ProductUserId,
-    public val platform: String,
-)
-
-internal class IntegratedPlatformSetUserLoginStatusOptions(
-    var integratedPlatform: String,
-    var localUserId: ProductUserId,
-    var loginStatus: EosIntegratedPlatformLoginStatus,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        seg.setInt64(8, arena.allocCString(integratedPlatform).address())
-        seg.setInt64(16, localUserId.raw)
-        seg.setInt32(24, loginStatus.value)
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
-        )
-    }
-}
-
-internal class IntegratedPlatformAddNotifyUserLoginStatusChangedOptions : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4)
-        )
-    }
-}
-
-internal class IntegratedPlatformSetUserPreLogoutCallbackOptions : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4)
-        )
-    }
-}
-
-internal class IntegratedPlatformFinalizeDeferredUserLogoutOptions(
-    var localUserId: ProductUserId,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        seg.setInt64(8, localUserId.raw)
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4), ValueLayout.JAVA_LONG
-        )
     }
 }

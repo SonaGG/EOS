@@ -15,37 +15,11 @@
  */
 package gg.sona.eos.rtc
 
-import gg.sona.eos.internal.setInt8
-import gg.sona.eos.internal.setInt16
-import gg.sona.eos.internal.setFloat
-import gg.sona.eos.internal.setDouble
-import gg.sona.eos.internal.setBool
-import gg.sona.eos.internal.getInt8
-import gg.sona.eos.internal.getInt16
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.getFloat
-import gg.sona.eos.internal.getDouble
-import gg.sona.eos.internal.getBool
-
 import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
 import gg.sona.eos.common.ProductUserId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.StructWriter
-import gg.sona.eos.internal.allocCString
-import gg.sona.eos.internal.allocCStringArray
-import gg.sona.eos.internal.allocHandleArray
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.withCallArena
-import java.lang.foreign.Arena
-import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.MemoryLayout
-import java.lang.foreign.MemorySegment
-import java.lang.foreign.ValueLayout
+import gg.sona.eos.internal.*
+import java.lang.foreign.*
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -202,128 +176,5 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
             )
         }
         return future
-    }
-}
-
-public class QueryJoinRoomTokenResult(
-    public val result: EosResult,
-    public val roomName: String,
-    public val clientBaseUrl: String,
-    public val queryId: Long,
-    public val tokenCount: Int,
-)
-
-public class RtcAdminUserToken(
-    public val productUserId: ProductUserId,
-    public val token: String,
-)
-
-internal class RtcAdminQueryJoinRoomTokenOptions(
-    var localUserId: ProductUserId,
-    var roomName: String,
-    var targetUserIds: List<Long>,
-    var targetUserIpAddresses: List<String?>?,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 2)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(roomName).address())
-        val userIdsArr = arena.allocHandleArray(targetUserIds)
-        seg.setInt64(24, userIdsArr.address())
-        seg.setInt32(32, targetUserIds.size)
-        val ipArr = targetUserIpAddresses?.let { arena.allocCStringArray(it) } ?: MemorySegment.NULL
-        seg.setInt64(40, ipArr.address())
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4), ValueLayout.ADDRESS,
-        )
-    }
-}
-
-internal class RtcAdminCopyUserTokenByIndexOptions(
-    var userTokenIndex: Int,
-    var queryId: Long,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 2)
-        seg.setInt32(8, userTokenIndex)
-        seg.setInt32(12, queryId.toInt())
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_INT, ValueLayout.JAVA_INT,
-        )
-    }
-}
-
-internal class RtcAdminCopyUserTokenByUserIdOptions(
-    var targetUserId: Long,
-    var queryId: Long,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 2)
-        seg.setInt64(8, targetUserId)
-        seg.setInt32(16, queryId.toInt())
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
-        )
-    }
-}
-
-internal class RtcAdminKickOptions(
-    var roomName: String,
-    var targetUserId: ProductUserId,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, arena.allocCString(roomName).address())
-        seg.setInt64(16, targetUserId.raw)
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.ADDRESS, ValueLayout.JAVA_LONG,
-        )
-    }
-}
-
-internal class RtcAdminSetParticipantHardMuteOptions(
-    var roomName: String,
-    var targetUserId: ProductUserId,
-    var mute: Boolean,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, arena.allocCString(roomName).address())
-        seg.setInt64(16, targetUserId.raw)
-        seg.setInt32(24, if (mute) 1 else 0)
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
-        )
     }
 }

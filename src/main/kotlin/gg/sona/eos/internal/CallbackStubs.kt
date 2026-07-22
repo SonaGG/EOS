@@ -171,21 +171,3 @@ internal object CallbackStubs {
         else -> MemorySegment::class.java
     }
 }
-
-/** A handle to a registered callback. */
-internal class StubHandle internal constructor(
-    @JvmField internal val id: Long,
-    @JvmField internal val segment: MemorySegment,
-)
-
-/**
- * The shape of a typical EOS callback: one argument which is a pointer to a
- * callback-info struct, no return value. Implementations extract the relevant
- * fields from the supplied [MemorySegment] and call the user's lambda.
- */
-fun interface EosCallback {
-    fun invoke(data: MemorySegment)
-    companion object {
-        internal val descriptor: FunctionDescriptor = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)
-    }
-}

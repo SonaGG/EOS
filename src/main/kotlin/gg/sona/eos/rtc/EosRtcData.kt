@@ -16,33 +16,11 @@
 package gg.sona.eos.rtc
 
 import gg.sona.eos.EosPlatform
-import gg.sona.eos.NotificationHandle
-import gg.sona.eos.internal.setInt8
-import gg.sona.eos.internal.setInt16
-import gg.sona.eos.internal.setFloat
-import gg.sona.eos.internal.setDouble
-import gg.sona.eos.internal.setBool
-import gg.sona.eos.internal.getInt8
-import gg.sona.eos.internal.getInt16
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.getFloat
-import gg.sona.eos.internal.getDouble
-import gg.sona.eos.internal.getBool
-
 import gg.sona.eos.EosResult
+import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.ProductUserId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.StructWriter
-import gg.sona.eos.internal.allocCString
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.withCallArena
-import java.lang.foreign.Arena
+import gg.sona.eos.internal.*
 import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
@@ -218,141 +196,5 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
 
     public companion object {
         public const val MAX_PACKET_SIZE: Int = 1170
-    }
-}
-
-public enum class EosRtcDataStatus(val value: Int) {
-    Unsupported(0),
-    Enabled(1),
-    Disabled(2);
-
-    public companion object {
-        public fun fromValue(v: Int): EosRtcDataStatus = entries.firstOrNull { it.value == v } ?: Unsupported
-    }
-}
-
-public class DataReceivedInfo(
-    public val localUserId: ProductUserId,
-    public val roomName: String,
-    public val data: ByteArray,
-    public val sender: ProductUserId,
-)
-
-public class RtcDataParticipantUpdatedInfo(
-    public val localUserId: ProductUserId,
-    public val roomName: String,
-    public val participantId: ProductUserId,
-    public val status: EosRtcDataStatus,
-)
-
-internal class RtcDataSendDataOptions(
-    var localUserId: ProductUserId,
-    var roomName: String,
-    var data: MemorySegment,
-    var dataLengthBytes: Int,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(roomName).address())
-        seg.setInt32(24, dataLengthBytes)
-        seg.setInt64(32, data.address())
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_INT,
-            MemoryLayout.paddingLayout(4), ValueLayout.ADDRESS,
-        )
-    }
-}
-
-internal class RtcDataUpdateSendingOptions(
-    var localUserId: ProductUserId,
-    var roomName: String,
-    var dataEnabled: Boolean,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(roomName).address())
-        seg.setInt32(24, if (dataEnabled) 1 else 0)
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_INT,
-        )
-    }
-}
-
-internal class RtcDataUpdateReceivingOptions(
-    var localUserId: ProductUserId,
-    var roomName: String,
-    var participantId: ProductUserId?,
-    var dataEnabled: Boolean,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(roomName).address())
-        seg.setInt64(24, participantId?.raw ?: 0L)
-        seg.setInt32(32, if (dataEnabled) 1 else 0)
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG,
-            ValueLayout.JAVA_INT,
-        )
-    }
-}
-
-internal class RtcDataAddNotifyDataReceivedOptions(
-    var localUserId: ProductUserId,
-    var roomName: String,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(roomName).address())
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS,
-        )
-    }
-}
-
-internal class RtcDataAddNotifyParticipantUpdatedOptions(
-    var localUserId: ProductUserId,
-    var roomName: String,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, 1)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(roomName).address())
-        return seg
-    }
-
-    companion object {
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS,
-        )
     }
 }

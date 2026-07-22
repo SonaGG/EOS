@@ -15,30 +15,11 @@
  */
 package gg.sona.eos.rtc
 
-import gg.sona.eos.NotificationHandle
-import gg.sona.eos.internal.setInt8
-import gg.sona.eos.internal.setInt16
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.setFloat
-import gg.sona.eos.internal.setDouble
-import gg.sona.eos.internal.setBool
-import gg.sona.eos.internal.getInt8
-import gg.sona.eos.internal.getInt16
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.getFloat
-import gg.sona.eos.internal.getDouble
-import gg.sona.eos.internal.getBool
-
 import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
+import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.ProductUserId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.withCallArena
-import java.lang.foreign.FunctionDescriptor
+import gg.sona.eos.internal.*
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
@@ -326,10 +307,3 @@ public class EosRtc internal constructor(private val platform: EosPlatform) {
     }
 }
 
-internal fun invokeHandle(platformHandle: Long): Long {
-    val fn = Native.downcall(
-        "EOS_Platform_GetRTCInterface",
-        FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
-    )
-    return fn.invokeExact(platformHandle) as Long
-}

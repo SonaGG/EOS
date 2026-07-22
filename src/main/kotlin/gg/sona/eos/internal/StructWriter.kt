@@ -16,7 +16,6 @@
 package gg.sona.eos.internal
 
 import java.lang.foreign.Arena
-import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 
@@ -30,14 +29,6 @@ import java.lang.foreign.ValueLayout
  */
 @PublishedApi
 internal interface StructWriter {
-    fun writeTo(arena: Arena): MemorySegment
-}
-
-/** Static layout description for a struct, used by `out` parameter scratch allocations. */
-internal interface StructLayout
-
-@PublishedApi
-internal interface StructWriterInternal {
     fun writeTo(arena: Arena): MemorySegment
 }
 

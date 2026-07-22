@@ -19,19 +19,8 @@ import gg.sona.eos.EosPlatform
 import gg.sona.eos.EosResult
 import gg.sona.eos.NotificationHandle
 import gg.sona.eos.common.ProductUserId
-import gg.sona.eos.internal.CallbackStubs
-import gg.sona.eos.internal.EosCallback
-import gg.sona.eos.internal.Native
-import gg.sona.eos.internal.StructWriter
-import gg.sona.eos.internal.allocCString
-import gg.sona.eos.internal.getInt32
-import gg.sona.eos.internal.getInt64
-import gg.sona.eos.internal.setInt32
-import gg.sona.eos.internal.setInt64
-import gg.sona.eos.internal.withCallArena
-import java.lang.foreign.Arena
+import gg.sona.eos.internal.*
 import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 import java.util.concurrent.CompletableFuture
@@ -196,123 +185,5 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         val ptr = seg.get(ValueLayout.ADDRESS, offset)
         if (ptr.address() == 0L) return ""
         return ptr.reinterpret(Long.MAX_VALUE).getString(0)
-    }
-}
-
-/** Result of a custom invite. */
-public enum class EosCustomInviteProcessingResult(val value: Int) {
-    Unknown(0),
-    Accepted(1),
-    Deferred(2),
-    UnhandledError(3);
-
-    public companion object {
-        internal fun fromValue(v: Int): EosCustomInviteProcessingResult =
-            entries.firstOrNull { it.value == v } ?: Unknown
-    }
-}
-
-public class CustomInviteReceivedInfo(
-    public val inviteId: String,
-    public val fromUserId: ProductUserId,
-    public val payload: String,
-)
-
-public class CustomInviteAcceptedInfo(
-    public val inviteId: String,
-    public val fromUserId: ProductUserId,
-    public val payload: String,
-)
-
-public class CustomInviteRejectedInfo(
-    public val inviteId: String,
-    public val fromUserId: ProductUserId,
-    public val payload: String,
-)
-
-// region Struct writers
-
-internal class CustomInvitesSetCustomInviteOptions(
-    var localUserId: ProductUserId,
-    var payload: String,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(payload).address())
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS,
-        )
-    }
-}
-
-internal class CustomInvitesSendCustomInviteOptions(
-    var localUserId: ProductUserId,
-    var recipients: List<ProductUserId>,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        seg.setInt64(8, localUserId.raw)
-        val arr = arena.allocate(ValueLayout.JAVA_LONG, recipients.size.toLong())
-        recipients.forEachIndexed { i, id ->
-            arr.setAtIndex(ValueLayout.JAVA_LONG, i.toLong(), id.raw)
-        }
-        seg.setInt64(16, arr.address())
-        seg.setInt32(24, recipients.size)
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_INT,
-        )
-    }
-}
-
-internal class CustomInvitesAddNotifyCommonOptions : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4)
-        )
-    }
-}
-
-internal class CustomInvitesFinalizeInviteOptions(
-    var localUserId: ProductUserId,
-    var inviteId: String,
-    var processingResult: EosCustomInviteProcessingResult,
-) : StructWriter {
-    override fun writeTo(arena: Arena): MemorySegment {
-        val seg = arena.allocate(LAYOUT)
-        seg.setInt32(0, API_LATEST)
-        seg.setInt64(8, localUserId.raw)
-        seg.setInt64(16, arena.allocCString(inviteId).address())
-        seg.setInt32(24, processingResult.value)
-        return seg
-    }
-
-    companion object {
-        const val API_LATEST = 1
-        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
-            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
-            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.JAVA_INT,
-        )
     }
 }
