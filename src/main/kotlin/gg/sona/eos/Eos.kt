@@ -82,6 +82,18 @@ public object Eos {
                 FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
             )
             val handle = fn.invokeExact(segment) as Long
+
+            // EOS_Platform_Create signals failure by returning null rather than a result code.
+            // Wrapping that produces a platform whose every call logs "one or more parameters are
+            // null" forever, with nothing pointing at the actual cause.
+            if (handle == 0L) {
+                error(
+                    "EOS_Platform_Create returned null. Check the product, sandbox and deployment " +
+                        "ids, the client credentials, and - when RTC is enabled on Windows - that " +
+                        "xaudio2_9redist.dll could be located."
+                )
+            }
+
             EosPlatform(handle)
         }
     }
@@ -105,7 +117,7 @@ public object Eos {
                 )
             )
             // First call: get required size
-            fn.invokeExact(inBuf, length, MemorySegment.NULL, sizePtr)
+            fn.invokeExact(inBuf, length, MemorySegment.NULL, sizePtr) as Int
             val size = sizePtr.get(ValueLayout.JAVA_INT, 0)
             val outBuf = arena.allocate(size.toLong())
             sizePtr.set(ValueLayout.JAVA_INT, 0, size)

@@ -60,36 +60,41 @@ public class EosPresence internal constructor(private val platform: EosPlatform)
 
     public fun queryPresence(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_Presence_QueryPresenceCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = PresenceQueryPresenceOptions(localUserId, targetUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Presence_QueryPresence",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
     }
 
-    public fun hasPresence(localUserId: EpicAccountId, targetUserId: EpicAccountId): Boolean {
-        val fn = Native.downcall(
-            "EOS_Presence_HasPresence",
-            FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
-        )
-        return (fn.invokeExact(handle(), localUserId.raw, targetUserId.raw) as Int) != 0
-    }
+    public fun hasPresence(localUserId: EpicAccountId, targetUserId: EpicAccountId): Boolean =
+        withCallArena { arena ->
+            val options = PresenceHasPresenceOptions(localUserId, targetUserId)
+            Native.invoke(
+                "EOS_Presence_HasPresence",
+                listOf(handle(), options.writeTo(arena)),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
+                ValueLayout.JAVA_INT,
+            ) as Int != 0
+        }
 
     public fun addNotifyOnPresenceChanged(
         localUserId: EpicAccountId,
         callback: (PresenceChangedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_Presence_PresenceChangedCallbackInfo: ClientData@0, LocalUserId@8, PresenceUserId@16
         val invoker = EosCallback { data ->
-            val localUserId = EpicAccountId(data.getInt64(16))
-            val presenceUserId = EpicAccountId(data.getInt64(24))
+            val localUserId = EpicAccountId(data.getInt64(8))
+            val presenceUserId = EpicAccountId(data.getInt64(16))
             callback(PresenceChangedInfo(localUserId, presenceUserId))
         }
         val handle = CallbackStubs.register(invoker)
@@ -98,8 +103,8 @@ public class EosPresence internal constructor(private val platform: EosPlatform)
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_Presence_AddNotifyOnPresenceChanged",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -134,6 +139,29 @@ internal class PresenceQueryPresenceOptions(
     }
 
     companion object {
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
+        )
+    }
+}
+
+/** `EOS_Presence_HasPresenceOptions`: ApiVersion@0, LocalUserId@8, TargetUserId@16. */
+internal class PresenceHasPresenceOptions(
+    var localUserId: EpicAccountId,
+    var targetUserId: EpicAccountId,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, API_LATEST)
+        seg.setInt64(8, localUserId.raw)
+        seg.setInt64(16, targetUserId.raw)
+        return seg
+    }
+
+    companion object {
+        // EOS_PRESENCE_HASPRESENCE_API_LATEST
+        const val API_LATEST = 1
         val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
             ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,

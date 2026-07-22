@@ -63,8 +63,9 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
             "cannot ingest more than $MAX_INGEST_STATS stats at once"
         }
         val future = CompletableFuture<IngestStatResult>()
+        // EOS_Stats_IngestStatCompleteCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val localUserId = ProductUserId(data.getInt64(16))
             val targetUserId = ProductUserId(data.getInt64(24))
             future.complete(IngestStatResult(result, localUserId, targetUserId))
@@ -74,8 +75,8 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Stats_IngestStat",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -93,8 +94,9 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
         endTime: Long = TIME_UNDEFINED,
     ): CompletableFuture<QueryStatsResult> {
         val future = CompletableFuture<QueryStatsResult>()
+        // EOS_Stats_OnQueryStatsCompleteCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val localUserId = ProductUserId(data.getInt64(16))
             val targetUserId = ProductUserId(data.getInt64(24))
             future.complete(QueryStatsResult(result, localUserId, targetUserId))
@@ -104,8 +106,8 @@ public class EosStats internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Stats_QueryStats",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future

@@ -53,16 +53,17 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         filename: String,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_PlayerDataStorage_QueryFileCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = PlayerDataStorageQueryFileOptions(localUserId, filename)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_PlayerDataStorage_QueryFile",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -72,31 +73,42 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         localUserId: ProductUserId,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_PlayerDataStorage_QueryFileListCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, FileCount@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = PlayerDataStorageQueryFileListOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_PlayerDataStorage_QueryFileList",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
     }
 
+    /**
+     * Returns the number of cached file metadata entries, or 0 if the query fails.
+     *
+     * `EOS_PlayerDataStorage_GetFileMetadataCount` returns an [EosResult] and reports
+     * the count through an `int32_t*` out parameter - it is not the return value.
+     */
     public fun getFileMetadataCount(localUserId: ProductUserId): Int {
         val options = PlayerDataStorageGetFileMetadataCountOptions(localUserId)
         return withCallArena { arena ->
             val seg = options.writeTo(arena)
-            Native.invoke(
-                "EOS_PlayerDataStorage_GetFileMetadataCount",
-                listOf(handle(), seg),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
+            val outCount = arena.allocate(ValueLayout.JAVA_INT)
+            val result = EosResult.fromValue(
+                Native.invoke(
+                    "EOS_PlayerDataStorage_GetFileMetadataCount",
+                    listOf(handle(), seg, outCount),
+                    listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                    ValueLayout.JAVA_INT,
+                ) as Int
+            )
+            if (result == EosResult.Success) outCount.get(ValueLayout.JAVA_INT, 0) else 0
         }
     }
 
@@ -148,16 +160,17 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         filename: String,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_PlayerDataStorage_DeleteFileCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = PlayerDataStorageDeleteFileOptions(localUserId, filename)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_PlayerDataStorage_DeleteFile",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -169,16 +182,17 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
         destinationFilename: String,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_PlayerDataStorage_DuplicateFileCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = PlayerDataStorageDuplicateFileOptions(localUserId, sourceFilename, destinationFilename)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_PlayerDataStorage_DuplicateFile",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -186,16 +200,17 @@ public class EosPlayerDataStorage internal constructor(private val platform: Eos
 
     public fun deleteCache(localUserId: ProductUserId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_PlayerDataStorage_DeleteCacheCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = PlayerDataStorageDeleteCacheOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_PlayerDataStorage_DeleteCache",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future

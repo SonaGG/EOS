@@ -157,8 +157,9 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         callback: (MessageToServerInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
-            val dataPtr = data.get(ValueLayout.ADDRESS, 16)
-            val dataSize = data.getInt32(24).toLong() and 0xffffffffL
+            // EOS_AntiCheatClient_OnMessageToServerCallbackInfo: ClientData@0, MessageData@8, MessageDataSizeBytes@16
+            val dataPtr = data.get(ValueLayout.ADDRESS, 8)
+            val dataSize = data.getInt32(16).toLong() and 0xffffffffL
             val bytes = if (dataPtr.address() == 0L || dataSize == 0L) ByteArray(0)
             else {
                 val arr = ByteArray(dataSize.toInt())
@@ -173,8 +174,8 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_AntiCheatClient_AddNotifyMessageToServer",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -282,9 +283,10 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
 
     public fun addNotifyMessageToPeer(callback: (MessageToPeerInfo) -> Unit): NotificationHandle {
         val invoker = EosCallback { data ->
-            val clientHandle = ClientHandle(data.getInt64(16))
-            val dataPtr = data.get(ValueLayout.ADDRESS, 24)
-            val dataSize = data.getInt32(32).toLong() and 0xffffffffL
+            // EOS_AntiCheatCommon_OnMessageToClientCallbackInfo: ClientData@0, ClientHandle@8, MessageData@16, MessageDataSizeBytes@24
+            val clientHandle = ClientHandle(data.getInt64(8))
+            val dataPtr = data.get(ValueLayout.ADDRESS, 16)
+            val dataSize = data.getInt32(24).toLong() and 0xffffffffL
             val bytes = if (dataPtr.address() == 0L || dataSize == 0L) ByteArray(0)
             else {
                 val arr = ByteArray(dataSize.toInt())
@@ -299,8 +301,8 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_AntiCheatClient_AddNotifyMessageToPeer",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -320,10 +322,11 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         callback: (PeerActionRequiredInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
-            val clientHandle = ClientHandle(data.getInt64(16))
-            val action = ClientAction.fromValue(data.getInt32(24))
-            val reasonCode = ClientActionReason.fromValue(data.getInt32(28))
-            val reasonStrPtr = data.get(ValueLayout.ADDRESS, 32)
+            // EOS_AntiCheatCommon_OnClientActionRequiredCallbackInfo: ClientData@0, ClientHandle@8, ClientAction@16, ActionReasonCode@20, ActionReasonDetailsString@24
+            val clientHandle = ClientHandle(data.getInt64(8))
+            val action = ClientAction.fromValue(data.getInt32(16))
+            val reasonCode = ClientActionReason.fromValue(data.getInt32(20))
+            val reasonStrPtr = data.get(ValueLayout.ADDRESS, 24)
             val reasonString = if (reasonStrPtr.address() == 0L) "" else
                 reasonStrPtr.reinterpret(Long.MAX_VALUE).getString(0)
             callback(PeerActionRequiredInfo(clientHandle, action, reasonCode, reasonString))
@@ -334,8 +337,8 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_AntiCheatClient_AddNotifyPeerActionRequired",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -355,8 +358,9 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         callback: (PeerAuthStatusChangedInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
-            val clientHandle = ClientHandle(data.getInt64(16))
-            val status = ClientAuthStatus.fromValue(data.getInt32(24))
+            // EOS_AntiCheatCommon_OnClientAuthStatusChangedCallbackInfo: ClientData@0, ClientHandle@8, ClientAuthStatus@16
+            val clientHandle = ClientHandle(data.getInt64(8))
+            val status = ClientAuthStatus.fromValue(data.getInt32(16))
             callback(PeerAuthStatusChangedInfo(clientHandle, status))
         }
         val handle = CallbackStubs.register(invoker)
@@ -365,8 +369,8 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_AntiCheatClient_AddNotifyPeerAuthStatusChanged",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -434,8 +438,9 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
         callback: (ClientIntegrityViolatedInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
-            val violationType = EosAntiCheatClientViolationType.fromValue(data.getInt32(16))
-            val msgPtr = data.get(ValueLayout.ADDRESS, 24)
+            // EOS_AntiCheatClient_OnClientIntegrityViolatedCallbackInfo: ClientData@0, ViolationType@8, ViolationMessage@16
+            val violationType = EosAntiCheatClientViolationType.fromValue(data.getInt32(8))
+            val msgPtr = data.get(ValueLayout.ADDRESS, 16)
             val message = if (msgPtr.address() == 0L) "" else
                 msgPtr.reinterpret(Long.MAX_VALUE).getString(0)
             callback(ClientIntegrityViolatedInfo(violationType, message))
@@ -446,8 +451,8 @@ public class EosAntiCheatClient internal constructor(private val platform: EosPl
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_AntiCheatClient_AddNotifyClientIntegrityViolated",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

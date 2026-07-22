@@ -46,11 +46,81 @@ internal object CallbackStubs {
         val invoke = findPublicInvokeMethod(functionalInterface)
         val handle = MethodHandles.publicLookup().unreflect(invoke).bindTo(functionalInterface)
         val adapted = handle.asType(javaTypeFor(descriptor))
+        val sized = reinterpretSegmentArguments(adapted)
+        val guarded = guardAgainstUpcallExceptions(sized)
         val arena = Arena.ofShared()
-        val stub = Native.linker.upcallStub(adapted, descriptor, arena)
+        val stub = Native.linker.upcallStub(guarded, descriptor, arena)
         val id = nextId.getAndIncrement()
         entries[id] = Entry(stub, arena)
         return StubHandle(id, stub)
+    }
+
+    /**
+     * A pointer parameter declared as a bare [ValueLayout.ADDRESS] arrives in an upcall as a
+     * *zero-length* [MemorySegment]: the JVM knows the address but has no idea how much memory
+     * is behind it, so every read fails with `IndexOutOfBoundsException ... byteSize: 0`.
+     *
+     * EOS hands every callback a pointer to a `..._CallbackInfo` struct it owns, so the size is
+     * never known to us up front. Each such parameter is therefore re-interpreted as unbounded
+     * before the callback body sees it, which is what makes `data.getInt32(0)` and friends work.
+     */
+    private fun reinterpretSegmentArguments(handle: MethodHandle): MethodHandle {
+        var result = handle
+        handle.type().parameterList().forEachIndexed { index, type ->
+            if (type == MemorySegment::class.java) {
+                result = MethodHandles.filterArguments(result, index, REINTERPRET_SEGMENT)
+            }
+        }
+        return result
+    }
+
+    private val REINTERPRET_SEGMENT: MethodHandle = MethodHandles.lookup().findStatic(
+        CallbackStubs::class.java,
+        "reinterpretSegment",
+        MethodType.methodType(MemorySegment::class.java, MemorySegment::class.java),
+    )
+
+    @Suppress("unused")
+    @JvmStatic
+    private fun reinterpretSegment(segment: MemorySegment): MemorySegment =
+        if (segment.byteSize() == 0L && segment.address() != 0L) {
+            segment.reinterpret(Long.MAX_VALUE)
+        } else {
+            segment
+        }
+
+    /**
+     * A Java exception thrown while a callback is being invoked from native
+     * code (an upcall) must never be allowed to propagate back into native
+     * code - the FFM API contract leaves that case undefined, and in
+     * practice it corrupts the upcall/downcall stub machinery and crashes
+     * the JVM with an access violation on a later, unrelated native call
+     * rather than failing cleanly at the throw site. Every callback is
+     * therefore wrapped so exceptions are caught and logged here instead.
+     */
+    private fun guardAgainstUpcallExceptions(handle: MethodHandle): MethodHandle {
+        val type = handle.type()
+        check(type.returnType() == Void.TYPE) {
+            "guardAgainstUpcallExceptions only supports void-returning callbacks, got $type"
+        }
+        val handler = MethodHandles.dropArguments(LOG_UPCALL_EXCEPTION, 1, type.parameterList())
+        return MethodHandles.catchException(handle, Throwable::class.java, handler)
+    }
+
+    private val LOG_UPCALL_EXCEPTION: MethodHandle = MethodHandles.lookup().findStatic(
+        CallbackStubs::class.java,
+        "logUpcallException",
+        MethodType.methodType(Void.TYPE, Throwable::class.java),
+    )
+
+    @Suppress("unused")
+    @JvmStatic
+    private fun logUpcallException(t: Throwable) {
+        System.err.println(
+            "[eos] Uncaught exception in a native callback was suppressed to avoid crossing " +
+                "back into native code (undefined behavior) and crashing the JVM:"
+        )
+        t.printStackTrace()
     }
 
     /**

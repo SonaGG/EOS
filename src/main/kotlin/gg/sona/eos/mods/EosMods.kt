@@ -30,6 +30,9 @@ import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
+import gg.sona.eos.internal.CallbackStubs
+import gg.sona.eos.internal.EosCallback
+import java.util.concurrent.CompletableFuture
 
 /**
  * Mods interface. Manages mod installation, updates, and enumeration.
@@ -47,60 +50,65 @@ public class EosMods internal constructor(private val platform: EosPlatform) {
     public fun installMod(
         localUserId: ProductUserId,
         mod: ModIdentifier,
-    ): EosResult = withCallArena { arena ->
-        val options = ModsInstallModOptions(localUserId, mod)
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_Mods_InstallMod",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
-        )
-    }
+    ): CompletableFuture<EosResult> = asyncCall(
+        "EOS_Mods_InstallMod",
+        ModsInstallModOptions(localUserId, mod),
+    )
 
     public fun uninstallMod(
         localUserId: ProductUserId,
         mod: ModIdentifier,
-    ): EosResult = withCallArena { arena ->
-        val options = ModsInstallModOptions(localUserId, mod)
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_Mods_UninstallMod",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
-        )
-    }
+    ): CompletableFuture<EosResult> = asyncCall(
+        "EOS_Mods_UninstallMod",
+        ModsUninstallModOptions(localUserId, mod),
+    )
 
     public fun enumerateMods(
         localUserId: ProductUserId,
         type: EosModEnumerationType = EosModEnumerationType.RecentlyInstalled,
-    ): EosResult = withCallArena { arena ->
-        val options = ModsEnumerateModsOptions(localUserId, type)
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_Mods_EnumerateMods",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
-        )
+    ): CompletableFuture<EosResult> = asyncCall(
+        "EOS_Mods_EnumerateMods",
+        ModsEnumerateModsOptions(localUserId, type),
+    )
+
+    /**
+     * All four Mods entry points are `void` C functions that deliver their result through a
+     * completion delegate; none of them return an [EosResult] directly.
+     */
+    private fun asyncCall(function: String, options: StructWriter): CompletableFuture<EosResult> {
+        val future = CompletableFuture<EosResult>()
+        // Every EOS_Mods_*CallbackInfo begins with EOS_EResult ResultCode at offset 0.
+        val stub = CallbackStubs.register(EosCallback { data ->
+            future.complete(EosResult.fromValue(data.getInt32(0)))
+        })
+        withCallArena { arena ->
+            val seg = options.writeTo(arena)
+            Native.invokeVoid(
+                function,
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+            )
+        }
+        return future
     }
 
-    public fun getModCount(localUserId: ProductUserId): Int {
-        val options = ModsGetModCountOptions(localUserId)
-        return withCallArena { arena ->
-            val seg = options.writeTo(arena)
-            Native.invoke(
-                "EOS_Mods_GetModCount",
-                listOf(handle(), seg),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
-        }
-    }
+    /**
+     * Not supported: the EOS SDK has no `EOS_Mods_GetModCount` entry point. The Mods interface
+     * exposes only `EOS_Mods_CopyModInfo`, which returns an `EOS_Mods_ModInfo` containing the
+     * whole array and its count in one shot.
+     *
+     * This previously called a symbol that does not exist in the shared library, so every
+     * invocation failed with [UnsatisfiedLinkError]. It now fails immediately and explains why.
+     */
+    @Deprecated(
+        "EOS_Mods_GetModCount does not exist in the EOS SDK; use copyModInfo() and read its count.",
+        level = DeprecationLevel.ERROR,
+    )
+    public fun getModCount(localUserId: ProductUserId): Int =
+        throw UnsupportedOperationException(
+            "The EOS SDK has no EOS_Mods_GetModCount function. Call EOS_Mods_CopyModInfo " +
+                "(via copyModInfo) and read the mod count from the returned EOS_Mods_ModInfo."
+        )
 
     public fun copyModInfoByIndex(
         localUserId: ProductUserId,
@@ -130,17 +138,10 @@ public class EosMods internal constructor(private val platform: EosPlatform) {
     public fun updateMod(
         localUserId: ProductUserId,
         mod: ModIdentifier,
-    ): EosResult = withCallArena { arena ->
-        val options = ModsUpdateModOptions(localUserId, mod)
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_Mods_UpdateMod",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
-        )
-    }
+    ): CompletableFuture<EosResult> = asyncCall(
+        "EOS_Mods_UpdateMod",
+        ModsUpdateModOptions(localUserId, mod),
+    )
 
     private fun readString(seg: MemorySegment, offset: Long): String {
         val ptr = seg.get(ValueLayout.ADDRESS, offset)
@@ -269,6 +270,29 @@ internal class ModsCopyModInfoByIndexOptions(
         val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
             ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
             ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
+        )
+    }
+}
+
+/** `EOS_Mods_UninstallModOptions`: ApiVersion@0, LocalUserId@8, Mod@16 (no `bRemoveAfterExit`). */
+internal class ModsUninstallModOptions(
+    var localUserId: ProductUserId,
+    var mod: ModIdentifier,
+) : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, API_LATEST)
+        seg.setInt64(8, localUserId.raw)
+        seg.setInt64(16, ModsModIdentifier(mod).writeTo(arena).address())
+        return seg
+    }
+
+    companion object {
+        // EOS_MODS_UNINSTALLMOD_API_LATEST
+        const val API_LATEST = 1
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS,
         )
     }
 }

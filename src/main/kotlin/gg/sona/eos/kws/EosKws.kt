@@ -56,13 +56,14 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
      */
     public fun queryAgeGate(): CompletableFuture<QueryAgeGateResult> {
         val future = CompletableFuture<QueryAgeGateResult>()
+        // EOS_KWS_QueryAgeGateCallbackInfo: ResultCode@0, ClientData@8, CountryCode@16, AgeOfConsent@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val countryCode = data.getInt64(24).let { addr ->
+            val result = EosResult.fromValue(data.getInt32(0))
+            val countryCode = data.getInt64(16).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
-            val ageOfConsent = data.getInt32(32).toLong() and 0xffffffffL
+            val ageOfConsent = data.getInt32(24).toLong() and 0xffffffffL
             future.complete(QueryAgeGateResult(result, countryCode, ageOfConsent.toInt()))
         })
         val options = KwsQueryAgeGateOptions()
@@ -70,8 +71,8 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_KWS_QueryAgeGate",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -87,14 +88,15 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
         parentEmail: String,
     ): CompletableFuture<CreateUserResult> {
         val future = CompletableFuture<CreateUserResult>()
+        // EOS_KWS_CreateUserCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, KWSUserId@24, bIsMinor@32
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = ProductUserId(data.getInt64(24))
-            val kwsUserId = data.getInt64(32).let { addr ->
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = ProductUserId(data.getInt64(16))
+            val kwsUserId = data.getInt64(24).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
-            val isMinor = data.getInt32(40) != 0
+            val isMinor = data.getInt32(32) != 0
             future.complete(CreateUserResult(result, localUserId, kwsUserId, isMinor))
         })
         val options = KwsCreateUserOptions(localUserId, dateOfBirth, parentEmail)
@@ -102,8 +104,8 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_KWS_CreateUser",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -112,19 +114,20 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
     /** Query the current permission state for a user. */
     public fun queryPermissions(localUserId: ProductUserId): CompletableFuture<QueryPermissionsResult> {
         val future = CompletableFuture<QueryPermissionsResult>()
+        // EOS_KWS_QueryPermissionsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, KWSUserId@24, DateOfBirth@32, bIsMinor@40, ParentEmail@48
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = ProductUserId(data.getInt64(24))
-            val kwsUserId = data.getInt64(32).let { addr ->
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = ProductUserId(data.getInt64(16))
+            val kwsUserId = data.getInt64(24).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
-            val dateOfBirth = data.getInt64(40).let { addr ->
+            val dateOfBirth = data.getInt64(32).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
-            val isMinor = data.getInt32(48) != 0
-            val parentEmail = data.getInt64(56).let { addr ->
+            val isMinor = data.getInt32(40) != 0
+            val parentEmail = data.getInt64(48).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
@@ -137,8 +140,8 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_KWS_QueryPermissions",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -150,9 +153,10 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
         parentEmail: String,
     ): CompletableFuture<ProductUserId> {
         val future = CompletableFuture<ProductUserId>()
+        // EOS_KWS_UpdateParentEmailCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = ProductUserId(data.getInt64(24))
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = ProductUserId(data.getInt64(16))
             if (result == EosResult.Success) future.complete(localUserId) else future.completeExceptionally(
                 gg.sona.eos.EosException(result)
             )
@@ -162,8 +166,8 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_KWS_UpdateParentEmail",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -181,9 +185,10 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
             "cannot request more than $MAX_PERMISSIONS permissions at once"
         }
         val future = CompletableFuture<ProductUserId>()
+        // EOS_KWS_RequestPermissionsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = ProductUserId(data.getInt64(24))
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = ProductUserId(data.getInt64(16))
             if (result == EosResult.Success) future.complete(localUserId) else future.completeExceptionally(
                 gg.sona.eos.EosException(result)
             )
@@ -193,8 +198,8 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_KWS_RequestPermissions",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -236,6 +241,7 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
         if (result != EosResult.Success) return@withCallArena null
         val seg = outPtr.get(ValueLayout.ADDRESS, 0)
         if (seg.address() == 0L) return@withCallArena null
+        // EOS_KWS_PermissionStatus: ApiVersion@0, Name@8, Status@16 (already correct)
         val name = seg.getInt64(8).let { addr ->
             if (addr == 0L) "" else
                 MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
@@ -279,18 +285,19 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
     public fun addNotifyPermissionsUpdateReceived(
         callback: (PermissionsUpdateInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_KWS_PermissionsUpdateReceivedCallbackInfo: ClientData@0, LocalUserId@8, KWSUserId@16, DateOfBirth@24, bIsMinor@32, ParentEmail@40
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val kwsUserId = data.getInt64(24).let { addr ->
+            val localUserId = ProductUserId(data.getInt64(8))
+            val kwsUserId = data.getInt64(16).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
-            val dateOfBirth = data.getInt64(32).let { addr ->
+            val dateOfBirth = data.getInt64(24).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
-            val isMinor = data.getInt32(40) != 0
-            val parentEmail = data.getInt64(48).let { addr ->
+            val isMinor = data.getInt32(32) != 0
+            val parentEmail = data.getInt64(40).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
@@ -302,8 +309,8 @@ public class EosKws internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_KWS_AddNotifyPermissionsUpdateReceived",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

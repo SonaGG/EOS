@@ -216,9 +216,10 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
 
     public fun queryNATType(): CompletableFuture<QueryNatTypeResult> {
         val future = CompletableFuture<QueryNatTypeResult>()
+        // EOS_P2P_OnQueryNATTypeCompleteInfo: ResultCode@0, ClientData@8, NATType@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val nat = EosNatType.fromValue(data.getInt32(24))
+            val result = EosResult.fromValue(data.getInt32(0))
+            val nat = EosNatType.fromValue(data.getInt32(16))
             future.complete(QueryNatTypeResult(result, nat))
         })
         val options = P2PQueryNATTypeOptions()
@@ -226,8 +227,8 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_P2P_QueryNATType",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -340,10 +341,11 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionRequestInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_P2P_OnIncomingConnectionRequestInfo: ClientData@0, LocalUserId@8, RemoteUserId@16, SocketId@24
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val remoteUserId = ProductUserId(data.getInt64(24))
-            val socketPtr = data.get(ValueLayout.ADDRESS, 32)
+            val localUserId = ProductUserId(data.getInt64(8))
+            val remoteUserId = ProductUserId(data.getInt64(16))
+            val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
                 socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
             callback(PeerConnectionRequestInfo(localUserId, remoteUserId, EosP2PSocketId(socketName)))
@@ -354,8 +356,8 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_P2P_AddNotifyPeerConnectionRequest",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -376,14 +378,15 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionEstablishedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_P2P_OnPeerConnectionEstablishedInfo: ClientData@0, LocalUserId@8, RemoteUserId@16, SocketId@24, ConnectionType@32, NetworkType@36
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val remoteUserId = ProductUserId(data.getInt64(24))
-            val socketPtr = data.get(ValueLayout.ADDRESS, 32)
+            val localUserId = ProductUserId(data.getInt64(8))
+            val remoteUserId = ProductUserId(data.getInt64(16))
+            val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
                 socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
-            val type = EosConnectionEstablishedType.fromValue(data.getInt32(40))
-            val netType = EosNetworkConnectionType.fromValue(data.getInt32(44))
+            val type = EosConnectionEstablishedType.fromValue(data.getInt32(32))
+            val netType = EosNetworkConnectionType.fromValue(data.getInt32(36))
             callback(PeerConnectionEstablishedInfo(localUserId, remoteUserId, EosP2PSocketId(socketName), type, netType))
         }
         val handle = CallbackStubs.register(invoker)
@@ -392,8 +395,8 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_P2P_AddNotifyPeerConnectionEstablished",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -414,10 +417,11 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionInterruptedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_P2P_OnPeerConnectionInterruptedInfo: ClientData@0, LocalUserId@8, RemoteUserId@16, SocketId@24
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val remoteUserId = ProductUserId(data.getInt64(24))
-            val socketPtr = data.get(ValueLayout.ADDRESS, 32)
+            val localUserId = ProductUserId(data.getInt64(8))
+            val remoteUserId = ProductUserId(data.getInt64(16))
+            val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
                 socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
             callback(PeerConnectionInterruptedInfo(localUserId, remoteUserId, EosP2PSocketId(socketName)))
@@ -428,8 +432,8 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_P2P_AddNotifyPeerConnectionInterrupted",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -450,13 +454,14 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
         socketId: EosP2PSocketId?,
         callback: (PeerConnectionClosedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_P2P_OnRemoteConnectionClosedInfo: ClientData@0, LocalUserId@8, RemoteUserId@16, SocketId@24, Reason@32
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val remoteUserId = ProductUserId(data.getInt64(24))
-            val socketPtr = data.get(ValueLayout.ADDRESS, 32)
+            val localUserId = ProductUserId(data.getInt64(8))
+            val remoteUserId = ProductUserId(data.getInt64(16))
+            val socketPtr = data.get(ValueLayout.ADDRESS, 24)
             val socketName = if (socketPtr.address() == 0L) "" else
                 socketPtr.reinterpret(Long.MAX_VALUE).getString(0)
-            val reason = EosConnectionClosedReason.fromValue(data.getInt32(40))
+            val reason = EosConnectionClosedReason.fromValue(data.getInt32(32))
             callback(PeerConnectionClosedInfo(localUserId, remoteUserId, EosP2PSocketId(socketName), reason))
         }
         val handle = CallbackStubs.register(invoker)
@@ -465,8 +470,8 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_P2P_AddNotifyPeerConnectionClosed",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -485,12 +490,13 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
     public fun addNotifyIncomingPacketQueueFull(
         callback: (IncomingPacketQueueFullInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_P2P_OnIncomingPacketQueueFullInfo: ClientData@0, PacketQueueMaxSizeBytes@8, PacketQueueCurrentSizeBytes@16, OverflowPacketLocalUserId@24, OverflowPacketChannel@32, OverflowPacketSizeBytes@36
         val invoker = EosCallback { data ->
-            val maxSize = data.getInt64(16)
-            val currentSize = data.getInt64(24)
-            val localUserId = ProductUserId(data.getInt64(32))
-            val channel = data.get(ValueLayout.JAVA_BYTE, 40).toInt() and 0xff
-            val packetSize = data.getInt32(44).toLong() and 0xffffffffL
+            val maxSize = data.getInt64(8)
+            val currentSize = data.getInt64(16)
+            val localUserId = ProductUserId(data.getInt64(24))
+            val channel = data.get(ValueLayout.JAVA_BYTE, 32).toInt() and 0xff
+            val packetSize = data.getInt32(36).toLong() and 0xffffffffL
             callback(IncomingPacketQueueFullInfo(maxSize, currentSize, localUserId, channel, packetSize))
         }
         val handle = CallbackStubs.register(invoker)
@@ -499,8 +505,8 @@ public class EosP2P internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_P2P_AddNotifyIncomingPacketQueueFull",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

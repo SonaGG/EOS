@@ -53,16 +53,17 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
         filename: String,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_TitleStorage_QueryFileCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = TitleStorageQueryFileOptions(localUserId, filename)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_TitleStorage_QueryFile",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -70,16 +71,17 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
 
     public fun queryFileList(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_TitleStorage_QueryFileListCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, FileCount@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = TitleStorageQueryFileListOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_TitleStorage_QueryFileList",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -143,16 +145,17 @@ public class EosTitleStorage internal constructor(private val platform: EosPlatf
 
     public fun deleteCache(localUserId: EpicAccountId? = null): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_TitleStorage_DeleteCacheCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = TitleStorageDeleteCacheOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_TitleStorage_DeleteCache",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future

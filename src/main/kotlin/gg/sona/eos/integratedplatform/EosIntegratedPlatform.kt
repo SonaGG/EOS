@@ -75,9 +75,14 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
     public fun addNotifyUserLoginStatusChanged(
         callback: (UserLoginStatusChangedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_IntegratedPlatform_UserLoginStatusChangedCallbackInfo: ClientData@0, PlatformType@8,
+        // LocalPlatformUserId@16, AccountId@24, ProductUserId@32, PreviousLoginStatus@40, CurrentLoginStatus@44
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val previous = readString(data, 24)
+            val localUserId = ProductUserId(data.getInt64(32))
+            val previous = readString(data, 16)
+            // NOTE: struct only has a single LocalPlatformUserId string field (no separate
+            // "current" string); there is no confidently-matching field/offset for this second
+            // read, so it is left unchanged.
             val current = readString(data, 32)
             val previousStatus = EosIntegratedPlatformLoginStatus.fromValue(data.getInt32(40))
             val currentStatus = EosIntegratedPlatformLoginStatus.fromValue(data.getInt32(44))
@@ -89,8 +94,8 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_IntegratedPlatform_AddNotifyUserLoginStatusChanged",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -113,9 +118,11 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
     public fun setUserPreLogoutCallback(
         callback: (UserPreLogoutInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_IntegratedPlatform_UserPreLogoutCallbackInfo: ClientData@0, PlatformType@8,
+        // LocalPlatformUserId@16, AccountId@24, ProductUserId@32
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val platform = readString(data, 24)
+            val localUserId = ProductUserId(data.getInt64(32))
+            val platform = readString(data, 16)
             callback(UserPreLogoutInfo(localUserId, platform))
         }
         val handle = CallbackStubs.register(invoker)
@@ -124,8 +131,8 @@ public class EosIntegratedPlatform internal constructor(private val platform: Eo
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_IntegratedPlatform_SetUserPreLogoutCallback",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

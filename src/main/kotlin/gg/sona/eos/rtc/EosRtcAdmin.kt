@@ -76,12 +76,14 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
         targetUserIpAddresses: List<String?>? = null,
     ): CompletableFuture<QueryJoinRoomTokenResult> {
         val future = CompletableFuture<QueryJoinRoomTokenResult>()
+        // EOS_RTCAdmin_QueryJoinRoomTokenCompleteCallbackInfo: ResultCode@0, ClientData@8, RoomName@16,
+        // ClientBaseUrl@24, QueryId@32, TokenCount@36
         val invoker = EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val room = readCString(data, 24) ?: ""
-            val clientBaseUrl = readCString(data, 32) ?: ""
-            val queryId = data.getInt32(40).toLong() and 0xffffffffL
-            val tokenCount = data.getInt32(44).toLong() and 0xffffffffL
+            val result = EosResult.fromValue(data.getInt32(0))
+            val room = readCString(data, 16) ?: ""
+            val clientBaseUrl = readCString(data, 24) ?: ""
+            val queryId = data.getInt32(32).toLong() and 0xffffffffL
+            val tokenCount = data.getInt32(36).toLong() and 0xffffffffL
             future.complete(QueryJoinRoomTokenResult(result, room, clientBaseUrl, queryId, tokenCount.toInt()))
         }
         val stub = CallbackStubs.register(invoker)
@@ -94,8 +96,8 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_RTCAdmin_QueryJoinRoomToken",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -164,16 +166,17 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
 
     public fun kick(roomName: String, targetUserId: ProductUserId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_RTCAdmin_KickCompleteCallbackInfo: ResultCode@0
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = RtcAdminKickOptions(roomName, targetUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_RTCAdmin_Kick",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -185,16 +188,17 @@ public class EosRtcAdmin internal constructor(private val platform: EosPlatform)
         mute: Boolean,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_RTCAdmin_SetParticipantHardMuteCompleteCallbackInfo: ResultCode@0
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = RtcAdminSetParticipantHardMuteOptions(roomName, targetUserId, mute)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_RTCAdmin_SetParticipantHardMute",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future

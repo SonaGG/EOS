@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "gg.sona"
-version = "1.1-SNAPSHOT"
+version = "1.6.2-SNAPSHOT"
 
 repositories {
     mavenCentral()

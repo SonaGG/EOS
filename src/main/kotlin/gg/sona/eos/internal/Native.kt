@@ -37,6 +37,13 @@ internal object Native {
     val linker: Linker = Linker.nativeLinker()
     private val lookup: SymbolLookup
 
+    // Declared above the init block on purpose: object properties initialize in declaration order,
+    // and the block below extracts the shared library through them.
+    private val extracted = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    @Volatile
+    private var tempDir: Path? = null
+
     init {
         val candidates = listOf("EOSSDK", "EOSSDK-Win64-Shipping", "EOSSDK-Mac-Shipping", "EOSSDK-Linux-Shipping")
         var resolved: SymbolLookup? = null
@@ -91,6 +98,49 @@ internal object Native {
         return seg.reinterpret(Long.MAX_VALUE).getString(0)
     }
 
+    /**
+     * Extracts a bundled file from `resources/natives` and returns its absolute path, or null when
+     * the resource is not bundled. Used for dependencies EOS loads by path rather than by linking,
+     * such as the Windows RTC XAudio redistributable.
+     */
+    fun extractBundledFile(name: String): String? {
+        extracted[name]?.let { return it }
+
+        synchronized(extracted) {
+            extracted[name]?.let { return it }
+
+            val stream = Native::class.java.classLoader.getResourceAsStream("natives/$name")
+                ?: return null
+
+            val target = tempDir().resolve(name)
+            stream.use { Files.copy(it, target, StandardCopyOption.REPLACE_EXISTING) }
+
+            val path = target.toAbsolutePath().toString()
+            extracted[name] = path
+            return path
+        }
+    }
+
+    private fun tempDir(): Path {
+        tempDir?.let { return it }
+
+        synchronized(this) {
+            tempDir?.let { return it }
+
+            val dir = Files.createTempDirectory("eos-natives-")
+            Runtime.getRuntime().addShutdownHook(
+                Thread {
+                    runCatching {
+                        Files.walk(dir).sorted(Comparator.reverseOrder())
+                            .forEach { Files.deleteIfExists(it) }
+                    }
+                }
+            )
+            tempDir = dir
+            return dir
+        }
+    }
+
     private fun extractBundledLibrary() {
         val candidates = listOf(
             "EOSSDK-Win64-Shipping.dll",
@@ -110,18 +160,10 @@ internal object Native {
         if (chosen == null || stream == null) {
             error("No bundled EOS native library found in resources/natives")
         }
-        val tmpDir = Files.createTempDirectory("eos-natives-")
-        Runtime.getRuntime().addShutdownHook(
-            Thread {
-                runCatching {
-                    Files.walk(tmpDir).sorted(Comparator.reverseOrder())
-                        .forEach { Files.deleteIfExists(it) }
-                }
-            }
-        )
-        val target: Path = tmpDir.resolve(chosen)
+        val target: Path = tempDir().resolve(chosen)
         Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING)
         stream.close()
+        extracted[chosen] = target.toAbsolutePath().toString()
         System.load(target.toAbsolutePath().toString())
     }
 }

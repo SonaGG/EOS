@@ -29,6 +29,10 @@ import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
+import gg.sona.eos.internal.CallbackStubs
+import gg.sona.eos.internal.EosCallback
+import gg.sona.eos.internal.getInt32
+import java.util.concurrent.CompletableFuture
 
 /**
  * Progression Snapshot interface. Bulk-submit player progression data.
@@ -49,19 +53,27 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
         return fn.invokeExact(platform.handle) as Long
     }
 
+    /**
+     * Begins a snapshot and returns the SDK-assigned snapshot id, or null if the call failed.
+     *
+     * `EOS_ProgressionSnapshot_BeginSnapshot` reports the new id through a `uint32_t*` out
+     * parameter; the return value is only the [EosResult].
+     */
     public fun beginSnapshot(
         localUserId: ProductUserId,
         snapshotId: String? = null,
-    ): EosResult = withCallArena { arena ->
+    ): Int? = withCallArena { arena ->
         val options = ProgressionSnapshotBeginSnapshotOptions(localUserId, snapshotId)
-        EosResult.fromValue(
+        val outSnapshotId = arena.allocate(ValueLayout.JAVA_INT)
+        val result = EosResult.fromValue(
             Native.invoke(
                 "EOS_ProgressionSnapshot_BeginSnapshot",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
+                listOf(handle(), options.writeTo(arena), outSnapshotId),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_INT,
             ) as Int
         )
+        if (result == EosResult.Success) outSnapshotId.get(ValueLayout.JAVA_INT, 0) else null
     }
 
     public fun addProgression(
@@ -80,16 +92,32 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
         )
     }
 
-    public fun submitSnapshot(snapshotId: String? = null): EosResult = withCallArena { arena ->
-        val options = ProgressionSnapshotSubmitSnapshotOptions(snapshotId)
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_ProgressionSnapshot_SubmitSnapshot",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
+    public fun submitSnapshot(snapshotId: String? = null): CompletableFuture<EosResult> =
+        asyncCall(
+            "EOS_ProgressionSnapshot_SubmitSnapshot",
+            ProgressionSnapshotSubmitSnapshotOptions(snapshotId),
         )
+
+    /**
+     * `SubmitSnapshot` and `DeleteSnapshot` are `void` C functions that deliver their result
+     * through a completion delegate; neither returns an [EosResult] directly. (`BeginSnapshot`,
+     * `AddProgression` and `EndSnapshot` really are synchronous.)
+     */
+    private fun asyncCall(function: String, options: StructWriter): CompletableFuture<EosResult> {
+        val future = CompletableFuture<EosResult>()
+        // Every EOS_ProgressionSnapshot_*CallbackInfo begins with EOS_EResult ResultCode at 0.
+        val stub = CallbackStubs.register(EosCallback { data ->
+            future.complete(EosResult.fromValue(data.getInt32(0)))
+        })
+        withCallArena { arena ->
+            val seg = options.writeTo(arena)
+            Native.invokeVoid(
+                function,
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+            )
+        }
+        return future
     }
 
     public fun endSnapshot(snapshotId: String? = null): EosResult = withCallArena { arena ->
@@ -104,18 +132,11 @@ public class EosProgressionSnapshot internal constructor(private val platform: E
         )
     }
 
-    public fun deleteSnapshot(snapshotId: String, localUserId: ProductUserId): EosResult =
-        withCallArena { arena ->
-            val options = ProgressionSnapshotDeleteSnapshotOptions(localUserId, snapshotId)
-            EosResult.fromValue(
-                Native.invoke(
-                    "EOS_ProgressionSnapshot_DeleteSnapshot",
-                    listOf(handle(), options.writeTo(arena)),
-                    listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                    ValueLayout.JAVA_INT,
-                ) as Int
-            )
-        }
+    public fun deleteSnapshot(snapshotId: String, localUserId: ProductUserId): CompletableFuture<EosResult> =
+        asyncCall(
+            "EOS_ProgressionSnapshot_DeleteSnapshot",
+            ProgressionSnapshotDeleteSnapshotOptions(localUserId, snapshotId),
+        )
 }
 
 internal class ProgressionSnapshotBeginSnapshotOptions(

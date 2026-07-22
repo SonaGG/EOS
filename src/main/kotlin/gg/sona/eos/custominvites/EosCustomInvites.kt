@@ -71,16 +71,17 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         recipients: List<ProductUserId>,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_CustomInvites_SendCustomInviteCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserIds@24, TargetUserIdsCount@32
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = CustomInvitesSendCustomInviteOptions(localUserId, recipients)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_CustomInvites_SendCustomInvite",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -92,8 +93,9 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         "EOS_CustomInvites_AddNotifyCustomInviteReceived",
         "EOS_CustomInvites_RemoveNotifyCustomInviteReceived",
     ) { data ->
-        val inviteId = readString(data, 16)
-        val fromUserId = ProductUserId(data.getInt64(24))
+        // EOS_CustomInvites_OnCustomInviteReceivedCallbackInfo: ClientData@0, TargetUserId@8, LocalUserId@16, CustomInviteId@24, Payload@32
+        val inviteId = readString(data, 24)
+        val fromUserId = ProductUserId(data.getInt64(8))
         val payload = readString(data, 32)
         callback(CustomInviteReceivedInfo(inviteId, fromUserId, payload))
     }
@@ -104,8 +106,9 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         "EOS_CustomInvites_AddNotifyCustomInviteAccepted",
         "EOS_CustomInvites_RemoveNotifyCustomInviteAccepted",
     ) { data ->
-        val inviteId = readString(data, 16)
-        val fromUserId = ProductUserId(data.getInt64(24))
+        // EOS_CustomInvites_OnCustomInviteAcceptedCallbackInfo: ClientData@0, TargetUserId@8, LocalUserId@16, CustomInviteId@24, Payload@32
+        val inviteId = readString(data, 24)
+        val fromUserId = ProductUserId(data.getInt64(8))
         val payload = readString(data, 32)
         callback(CustomInviteAcceptedInfo(inviteId, fromUserId, payload))
     }
@@ -116,8 +119,9 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
         "EOS_CustomInvites_AddNotifyCustomInviteRejected",
         "EOS_CustomInvites_RemoveNotifyCustomInviteRejected",
     ) { data ->
-        val inviteId = readString(data, 16)
-        val fromUserId = ProductUserId(data.getInt64(24))
+        // EOS_CustomInvites_CustomInviteRejectedCallbackInfo: ClientData@0, TargetUserId@8, LocalUserId@16, CustomInviteId@24, Payload@32
+        val inviteId = readString(data, 24)
+        val fromUserId = ProductUserId(data.getInt64(8))
         val payload = readString(data, 32)
         callback(CustomInviteRejectedInfo(inviteId, fromUserId, payload))
     }
@@ -168,8 +172,8 @@ public class EosCustomInvites internal constructor(private val platform: EosPlat
             val seg = options.writeTo(arena)
             Native.invoke(
                 addFunction,
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

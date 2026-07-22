@@ -57,11 +57,11 @@ public value class EpicAccountId(public val raw: Long) {
                     ValueLayout.ADDRESS,
                 )
             )
-            fn.invokeExact(raw, MemorySegment.NULL, sizePtr)
+            fn.invokeExact(raw, MemorySegment.NULL, sizePtr) as Int
             val size = sizePtr.get(ValueLayout.JAVA_INT, 0)
             val buf = arena.allocate(size.toLong())
             sizePtr.set(ValueLayout.JAVA_INT, 0, size)
-            fn.invokeExact(raw, buf, sizePtr)
+            fn.invokeExact(raw, buf, sizePtr) as Int
             buf.getString(0)
         }
     }
@@ -114,11 +114,11 @@ public value class ProductUserId(public val raw: Long) {
                     ValueLayout.ADDRESS,
                 )
             )
-            fn.invokeExact(raw, MemorySegment.NULL, sizePtr)
+            fn.invokeExact(raw, MemorySegment.NULL, sizePtr) as Int
             val size = sizePtr.get(ValueLayout.JAVA_INT, 0)
             val buf = arena.allocate(size.toLong())
             sizePtr.set(ValueLayout.JAVA_INT, 0, size)
-            fn.invokeExact(raw, buf, sizePtr)
+            fn.invokeExact(raw, buf, sizePtr) as Int
             buf.getString(0)
         }
     }
@@ -162,11 +162,11 @@ public value class ContinuanceToken(public val raw: Long) {
                     ValueLayout.ADDRESS,
                 )
             )
-            fn.invokeExact(raw, MemorySegment.NULL, sizePtr)
+            fn.invokeExact(raw, MemorySegment.NULL, sizePtr) as Int
             val size = sizePtr.get(ValueLayout.JAVA_INT, 0)
             val buf = arena.allocate(size.toLong())
             sizePtr.set(ValueLayout.JAVA_INT, 0, size)
-            fn.invokeExact(raw, buf, sizePtr)
+            fn.invokeExact(raw, buf, sizePtr) as Int
             buf.getString(0)
         }
     }

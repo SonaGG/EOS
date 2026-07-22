@@ -30,6 +30,9 @@ import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
+import gg.sona.eos.internal.CallbackStubs
+import gg.sona.eos.internal.EosCallback
+import java.util.concurrent.CompletableFuture
 
 /**
  * Sanctions interface. Query player sanctions and submit appeals.
@@ -44,16 +47,31 @@ public class EosSanctions internal constructor(private val platform: EosPlatform
         return fn.invokeExact(platform.handle) as Long
     }
 
-    public fun queryActivePlayerSanctions(targetUserId: ProductUserId): EosResult = withCallArena { arena ->
-        val options = SanctionsQueryActivePlayerSanctionsOptions(targetUserId)
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_Sanctions_QueryActivePlayerSanctions",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
+    public fun queryActivePlayerSanctions(targetUserId: ProductUserId): CompletableFuture<EosResult> =
+        asyncCall(
+            "EOS_Sanctions_QueryActivePlayerSanctions",
+            SanctionsQueryActivePlayerSanctionsOptions(targetUserId),
         )
+
+    /**
+     * Both Sanctions entry points are `void` C functions that deliver their result through a
+     * completion delegate; neither returns an [EosResult] directly.
+     */
+    private fun asyncCall(function: String, options: StructWriter): CompletableFuture<EosResult> {
+        val future = CompletableFuture<EosResult>()
+        // Every EOS_Sanctions_*CallbackInfo begins with EOS_EResult ResultCode at offset 0.
+        val stub = CallbackStubs.register(EosCallback { data ->
+            future.complete(EosResult.fromValue(data.getInt32(0)))
+        })
+        withCallArena { arena ->
+            val seg = options.writeTo(arena)
+            Native.invokeVoid(
+                function,
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+            )
+        }
+        return future
     }
 
     public fun getPlayerSanctionCount(targetUserId: ProductUserId): Int {
@@ -96,17 +114,10 @@ public class EosSanctions internal constructor(private val platform: EosPlatform
         targetUserId: ProductUserId,
         sanctionId: String,
         reason: String,
-    ): EosResult = withCallArena { arena ->
-        val options = SanctionsCreatePlayerSanctionAppealOptions(targetUserId, sanctionId, reason)
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_Sanctions_CreatePlayerSanctionAppeal",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
-        )
-    }
+    ): CompletableFuture<EosResult> = asyncCall(
+        "EOS_Sanctions_CreatePlayerSanctionAppeal",
+        SanctionsCreatePlayerSanctionAppealOptions(targetUserId, sanctionId, reason),
+    )
 
     private fun readString(seg: MemorySegment, offset: Long): String {
         val ptr = seg.get(ValueLayout.ADDRESS, offset)

@@ -77,8 +77,9 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
     ): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = EpicAccountId(data.getInt64(24))
+            // EOS_Auth_LoginCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = EpicAccountId(data.getInt64(16))
             future.complete(LoginResult(result, localUserId))
         }
         val handle = CallbackStubs.register(invoker)
@@ -96,8 +97,8 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Auth_Login",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -105,15 +106,16 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
 
     public fun logout(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
-        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(8))) }
+        // EOS_Auth_LogoutCallbackInfo: ResultCode@0
+        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
         val handle = CallbackStubs.register(invoker)
         val options = AuthLogoutOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Auth_Logout",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -149,9 +151,10 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
         callback: (LoginStatusChangedInfo) -> Unit,
     ): NotificationHandle {
         val invoker = EosCallback { data ->
-            val localUserId = EpicAccountId(data.getInt64(16))
-            val prevStatus = EosLoginStatus.fromValue(data.getInt32(24))
-            val newStatus = EosLoginStatus.fromValue(data.getInt32(28))
+            // EOS_Auth_LoginStatusChangedCallbackInfo: ClientData@0, LocalUserId@8, PrevStatus@16, CurrentStatus@20
+            val localUserId = EpicAccountId(data.getInt64(8))
+            val prevStatus = EosLoginStatus.fromValue(data.getInt32(16))
+            val newStatus = EosLoginStatus.fromValue(data.getInt32(20))
             callback(LoginStatusChangedInfo(localUserId, prevStatus, newStatus))
         }
         val handle = CallbackStubs.register(invoker)
@@ -160,8 +163,8 @@ public class EosAuth internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_Auth_AddNotifyLoginStatusChanged",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

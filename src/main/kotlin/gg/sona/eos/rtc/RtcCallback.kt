@@ -48,6 +48,8 @@ internal object RtcCallback {
         return ptr.reinterpret(Long.MAX_VALUE).getString(0)
     }
 
-    fun readResult(data: MemorySegment): EosResult = EosResult.fromValue(data.getInt32(8))
-    fun readLocalUserId(data: MemorySegment): ProductUserId = ProductUserId(data.getInt64(24))
+    // EOS_RTC_JoinRoom/LeaveRoom/BlockParticipant/DisconnectedCallbackInfo: ResultCode@0
+    fun readResult(data: MemorySegment): EosResult = EosResult.fromValue(data.getInt32(0))
+    // EOS_RTC_JoinRoom/LeaveRoom/BlockParticipant/DisconnectedCallbackInfo: LocalUserId@16
+    fun readLocalUserId(data: MemorySegment): ProductUserId = ProductUserId(data.getInt64(16))
 }

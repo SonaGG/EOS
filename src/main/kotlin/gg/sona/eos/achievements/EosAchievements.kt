@@ -54,16 +54,17 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         localUserId: ProductUserId? = null,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo: ResultCode@0, ClientData@8
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = AchievementsQueryDefinitionsOptions(localUserId ?: ProductUserId.Invalid)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Achievements_QueryDefinitions",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -132,8 +133,9 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         localUserId: ProductUserId? = null,
     ): CompletableFuture<QueryPlayerAchievementsResult> {
         val future = CompletableFuture<QueryPlayerAchievementsResult>()
+        // EOS_Achievements_OnQueryPlayerAchievementsCompleteCallbackInfo: ResultCode@0, ClientData@8, TargetUserId@16, LocalUserId@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val targetUserId = ProductUserId(data.getInt64(16))
             val localUserId = ProductUserId(data.getInt64(24))
             future.complete(QueryPlayerAchievementsResult(result, targetUserId, localUserId))
@@ -143,8 +145,8 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Achievements_QueryPlayerAchievements",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -225,8 +227,9 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
         achievementIds: List<String>,
     ): CompletableFuture<UnlockAchievementsResult> {
         val future = CompletableFuture<UnlockAchievementsResult>()
+        // EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo: ResultCode@0, ClientData@8, UserId@16, AchievementsCount@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val userId = ProductUserId(data.getInt64(16))
             val count = data.getInt32(24).toLong() and 0xffffffffL
             future.complete(UnlockAchievementsResult(result, userId, count.toInt()))
@@ -236,8 +239,8 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Achievements_UnlockAchievements",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -251,13 +254,14 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
     public fun addNotifyAchievementsUnlocked(
         callback: (AchievementUnlockedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_Achievements_OnAchievementsUnlockedCallbackV2Info: ClientData@0, UserId@8, AchievementId@16, UnlockTime@24
         val invoker = EosCallback { data ->
-            val userId = ProductUserId(data.getInt64(16))
-            val achievementId = data.getInt64(24).let { addr ->
+            val userId = ProductUserId(data.getInt64(8))
+            val achievementId = data.getInt64(16).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
-            val unlockTime = data.getInt64(32)
+            val unlockTime = data.getInt64(24)
             callback(AchievementUnlockedInfo(userId, achievementId, unlockTime))
         }
         val handle = CallbackStubs.register(invoker)
@@ -266,8 +270,8 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_Achievements_AddNotifyAchievementsUnlockedV2",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -276,7 +280,7 @@ public class EosAchievements internal constructor(private val platform: EosPlatf
 
     public fun removeNotifyAchievementsUnlocked(handle: NotificationHandle) {
         Native.invokeVoid(
-            "EOS_Achievements_RemoveNotifyAchievementsUnlockedV2",
+            "EOS_Achievements_RemoveNotifyAchievementsUnlocked",
             listOf(handle(), handle.notificationId),
             listOf(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG)
         )

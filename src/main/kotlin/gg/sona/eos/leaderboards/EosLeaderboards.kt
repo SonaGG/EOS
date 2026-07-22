@@ -57,8 +57,9 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         endTime: Long = TIME_UNDEFINED,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_Leaderboards_OnQueryLeaderboardDefinitionsCompleteCallbackInfo: ResultCode@0, ClientData@8
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = LeaderboardsQueryLeaderboardDefinitionsOptions(
             startTime, endTime, localUserId ?: ProductUserId.Invalid
@@ -67,8 +68,8 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Leaderboards_QueryLeaderboardDefinitions",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -139,9 +140,10 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         localUserId: ProductUserId? = null,
     ): CompletableFuture<QueryLeaderboardRanksResult> {
         val future = CompletableFuture<QueryLeaderboardRanksResult>()
+        // EOS_Leaderboards_OnQueryLeaderboardRanksCompleteCallbackInfo: ResultCode@0, ClientData@8, LeaderboardId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val lbId = data.getInt64(24).let { addr ->
+            val result = EosResult.fromValue(data.getInt32(0))
+            val lbId = data.getInt64(16).let { addr ->
                 if (addr == 0L) "" else
                     MemorySegment.ofAddress(addr).reinterpret(Long.MAX_VALUE).getString(0)
             }
@@ -152,8 +154,8 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Leaderboards_QueryLeaderboardRanks",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -226,8 +228,9 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
         endTime: Long = TIME_UNDEFINED,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_Leaderboards_OnQueryLeaderboardUserScoresCompleteCallbackInfo: ResultCode@0, ClientData@8
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = LeaderboardsQueryLeaderboardUserScoresOptions(
             userIds, statInfo, startTime, endTime, localUserId ?: ProductUserId.Invalid
@@ -236,8 +239,8 @@ public class EosLeaderboards internal constructor(private val platform: EosPlatf
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Leaderboards_QueryLeaderboardUserScores",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future

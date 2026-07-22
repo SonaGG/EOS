@@ -67,16 +67,17 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             "cannot query more than $MAX_OWNERSHIP_CATALOG_IDS items at once"
         }
         val future = CompletableFuture<EosResult>()
+        // EOS_Ecom_QueryOwnershipCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, ItemOwnership@24, ItemOwnershipCount@32
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = EcomQueryOwnershipOptions(localUserId, catalogItemIds, sandboxIds)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_QueryOwnership",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -94,10 +95,11 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             "cannot query more than $MAX_OWNERSHIP_CATALOG_IDS items at once"
         }
         val future = CompletableFuture<QueryOwnershipBySandboxIdsResult>()
+        // EOS_Ecom_QueryOwnershipBySandboxIdsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, SandboxIdItemOwnerships@24, SandboxIdItemOwnershipsCount@32
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val localUserId = EpicAccountId(data.getInt64(16))
-            val sandboxIdCount = data.getInt32(24).toLong() and 0xffffffffL
+            val sandboxIdCount = data.getInt32(32).toLong() and 0xffffffffL
             future.complete(QueryOwnershipBySandboxIdsResult(result, localUserId, sandboxIdCount.toInt()))
         })
         val options = EcomQueryOwnershipBySandboxIdsOptions(localUserId, sandboxIds, catalogItemIds)
@@ -105,8 +107,8 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_QueryOwnershipBySandboxIds",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -120,8 +122,9 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             "cannot query more than $MAX_OWNERSHIP_TOKEN_CATALOG_IDS items at once"
         }
         val future = CompletableFuture<QueryOwnershipTokenResult>()
+        // EOS_Ecom_QueryOwnershipTokenCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, OwnershipToken@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val localUserId = EpicAccountId(data.getInt64(16))
             val tokenPtr = data.get(ValueLayout.ADDRESS, 24)
             val token = if (tokenPtr.address() == 0L) "" else
@@ -133,8 +136,8 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_QueryOwnershipToken",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -150,8 +153,9 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         includeRedeemed: Boolean = false,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_Ecom_QueryEntitlementsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = EcomQueryEntitlementsOptions(
             localUserId, entitlementNames, includeRedeemed
@@ -160,8 +164,8 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_QueryEntitlements",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -172,8 +176,9 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         entitlementNames: List<String>? = null,
     ): CompletableFuture<QueryEntitlementTokenResult> {
         val future = CompletableFuture<QueryEntitlementTokenResult>()
+        // EOS_Ecom_QueryEntitlementTokenCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, EntitlementToken@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val localUserId = EpicAccountId(data.getInt64(16))
             val tokenPtr = data.get(ValueLayout.ADDRESS, 24)
             val token = if (tokenPtr.address() == 0L) "" else
@@ -185,8 +190,8 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_QueryEntitlementToken",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -279,16 +284,17 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
         overrideCatalogNamespace: String? = null,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_Ecom_QueryOffersCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = EcomQueryOffersOptions(localUserId, overrideCatalogNamespace)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_QueryOffers",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -398,8 +404,9 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             "cannot checkout more than $MAX_CHECKOUT_ENTRIES entries at once"
         }
         val future = CompletableFuture<CheckoutResult>()
+        // EOS_Ecom_CheckoutCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TransactionId@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
+            val result = EosResult.fromValue(data.getInt32(0))
             val localUserId = EpicAccountId(data.getInt64(16))
             val txIdPtr = data.get(ValueLayout.ADDRESS, 24)
             val transactionId = if (txIdPtr.address() == 0L) "" else
@@ -411,8 +418,8 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_Checkout",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -426,16 +433,17 @@ public class EosEcom internal constructor(private val platform: EosPlatform) {
             "cannot redeem more than $REDEEM_MAX_ENTITLEMENT_IDS entitlements at once"
         }
         val future = CompletableFuture<EosResult>()
+        // EOS_Ecom_RedeemEntitlementsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = EcomRedeemEntitlementsOptions(localUserId, entitlementIds)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Ecom_RedeemEntitlements",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future

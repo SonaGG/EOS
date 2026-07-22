@@ -246,7 +246,7 @@ public class EosPlatform internal constructor(
         val size = sizePtr.get(ValueLayout.JAVA_INT, 0)
         val buf = arena.allocate(size.toLong())
         sizePtr.set(ValueLayout.JAVA_INT, 0, size)
-        fn.invokeExact(handle, userId.raw, buf, sizePtr)
+        fn.invokeExact(handle, userId.raw, buf, sizePtr) as Int
         buf.getString(0)
     }
 

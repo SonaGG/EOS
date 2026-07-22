@@ -96,16 +96,17 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         dataEnabled: Boolean,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_RTCData_UpdateSendingCallbackInfo: ResultCode@0
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = RtcDataUpdateSendingOptions(localUserId, roomName, dataEnabled)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_RTCData_UpdateSending",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -118,16 +119,17 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         dataEnabled: Boolean,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_RTCData_UpdateReceivingCallbackInfo: ResultCode@0
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = RtcDataUpdateReceivingOptions(localUserId, roomName, participantId, dataEnabled)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_RTCData_UpdateReceiving",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -138,18 +140,20 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         roomName: String,
         callback: (DataReceivedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_RTCData_DataReceivedCallbackInfo: ClientData@0, LocalUserId@8, RoomName@16,
+        // DataLengthBytes@24, Data@32, ParticipantId@40
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val roomName = readCString(data, 24) ?: ""
-            val len = data.getInt32(32) and 0x7fffffff
-            val dataPtr = data.get(ValueLayout.ADDRESS, 40)
+            val localUserId = ProductUserId(data.getInt64(8))
+            val roomName = readCString(data, 16) ?: ""
+            val len = data.getInt32(24) and 0x7fffffff
+            val dataPtr = data.get(ValueLayout.ADDRESS, 32)
             val bytes = if (dataPtr.address() == 0L || len == 0) ByteArray(0)
             else {
                 val arr = ByteArray(len)
                 MemorySegment.ofArray(arr).copyFrom(MemorySegment.ofAddress(dataPtr.address()).reinterpret(len.toLong()))
                 arr
             }
-            val sender = ProductUserId(data.getInt64(48))
+            val sender = ProductUserId(data.getInt64(40))
             callback(DataReceivedInfo(localUserId, roomName, bytes, sender))
         }
         val handle = CallbackStubs.register(invoker)
@@ -158,8 +162,8 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_RTCData_AddNotifyDataReceived",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }
@@ -180,11 +184,13 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
         roomName: String,
         callback: (RtcDataParticipantUpdatedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_RTCData_ParticipantUpdatedCallbackInfo: ClientData@0, LocalUserId@8, RoomName@16,
+        // ParticipantId@24, DataStatus@32
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val roomName = readCString(data, 24) ?: ""
-            val participantId = ProductUserId(data.getInt64(32))
-            val status = EosRtcDataStatus.fromValue(data.getInt32(40))
+            val localUserId = ProductUserId(data.getInt64(8))
+            val roomName = readCString(data, 16) ?: ""
+            val participantId = ProductUserId(data.getInt64(24))
+            val status = EosRtcDataStatus.fromValue(data.getInt32(32))
             callback(RtcDataParticipantUpdatedInfo(localUserId, roomName, participantId, status))
         }
         val handle = CallbackStubs.register(invoker)
@@ -193,8 +199,8 @@ public class EosRtcData internal constructor(private val platform: EosPlatform) 
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_RTCData_AddNotifyParticipantUpdated",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

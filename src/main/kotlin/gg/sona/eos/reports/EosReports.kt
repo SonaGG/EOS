@@ -29,6 +29,10 @@ import java.lang.foreign.FunctionDescriptor
 import java.lang.foreign.MemoryLayout
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
+import gg.sona.eos.internal.CallbackStubs
+import gg.sona.eos.internal.EosCallback
+import gg.sona.eos.internal.getInt32
+import java.util.concurrent.CompletableFuture
 
 /**
  * Reports interface. Submit player-behavior reports.
@@ -58,7 +62,8 @@ public class EosReports internal constructor(private val platform: EosPlatform) 
         reasonCategory: String,
         comments: String = "",
         contextBlob: ByteArray = ByteArray(0),
-    ): EosResult = withCallArena { arena ->
+    ): CompletableFuture<EosResult> = withCallArena { arena ->
+        val future = CompletableFuture<EosResult>()
         val ctx = arena.allocate(contextBlob.size.toLong())
         if (contextBlob.isNotEmpty()) {
             ctx.copyFrom(MemorySegment.ofArray(contextBlob))
@@ -66,14 +71,16 @@ public class EosReports internal constructor(private val platform: EosPlatform) 
         val options = ReportsSendPlayerBehaviorReportOptions(
             reporterUserId, reportedUserId, reasonCategory, comments, contextBlob.size, ctx
         )
-        EosResult.fromValue(
-            Native.invoke(
-                "EOS_Reports_SendPlayerBehaviorReport",
-                listOf(handle(), options.writeTo(arena)),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
-                ValueLayout.JAVA_INT,
-            ) as Int
+        // EOS_Reports_SendPlayerBehaviorReportCompleteCallbackInfo: ResultCode@0, ClientData@8
+        val stub = CallbackStubs.register(EosCallback { data ->
+            future.complete(EosResult.fromValue(data.getInt32(0)))
+        })
+        Native.invokeVoid(
+            "EOS_Reports_SendPlayerBehaviorReport",
+            listOf(handle(), options.writeTo(arena), MemorySegment.NULL, stub.segment),
+            listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
         )
+        future
     }
 }
 

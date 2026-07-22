@@ -52,16 +52,17 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
     /** Open the social overlay's friends list. */
     public fun showFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_UI_ShowFriendsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = UiShowFriendsOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_UI_ShowFriends",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -70,16 +71,17 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
     /** Hide the social overlay. */
     public fun hideFriends(localUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_UI_HideFriendsCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = UiHideFriendsOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_UI_HideFriends",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -114,9 +116,10 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
     public fun addNotifyDisplaySettingsUpdated(
         callback: (DisplaySettingsUpdatedInfo) -> Unit,
     ): NotificationHandle {
+        // EOS_UI_OnDisplaySettingsUpdatedCallbackInfo: ClientData@0, bIsVisible@8, bIsExclusiveInput@12
         val invoker = EosCallback { data ->
-            val visible = data.getInt32(16) != 0
-            val exclusiveInput = data.getInt32(20) != 0
+            val visible = data.getInt32(8) != 0
+            val exclusiveInput = data.getInt32(12) != 0
             callback(DisplaySettingsUpdatedInfo(visible, exclusiveInput))
         }
         val handle = CallbackStubs.register(invoker)
@@ -125,8 +128,8 @@ public class EosUi internal constructor(private val platform: EosPlatform) {
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_UI_AddNotifyDisplaySettingsUpdated",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

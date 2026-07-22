@@ -82,9 +82,10 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
     ): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = ProductUserId(data.getInt64(24))
-            val ct = ContinuanceToken(data.getInt64(40))
+            // EOS_Connect_LoginCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, ContinuanceToken@24
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = ProductUserId(data.getInt64(16))
+            val ct = ContinuanceToken(data.getInt64(24))
             future.complete(LoginResult(result, localUserId, ct))
         }
         val handle = CallbackStubs.register(invoker)
@@ -100,8 +101,8 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Connect_Login",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -109,15 +110,16 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
 
     public fun logout(localUserId: ProductUserId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
-        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(8))) }
+        // EOS_Connect_LogoutCallbackInfo: ResultCode@0
+        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
         val handle = CallbackStubs.register(invoker)
         val options = ConnectLogoutOptions(localUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Connect_Logout",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -126,8 +128,9 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
     public fun createUser(continuanceToken: ContinuanceToken): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = ProductUserId(data.getInt64(24))
+            // EOS_Connect_CreateUserCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = ProductUserId(data.getInt64(16))
             future.complete(LoginResult(result, localUserId, ContinuanceToken(0L)))
         }
         val handle = CallbackStubs.register(invoker)
@@ -136,8 +139,8 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Connect_CreateUser",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -155,8 +158,9 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
     ): CompletableFuture<LoginResult> {
         val future = CompletableFuture<LoginResult>()
         val invoker = EosCallback { data ->
-            val result = EosResult.fromValue(data.getInt32(8))
-            val localUserId = ProductUserId(data.getInt64(24))
+            // EOS_Connect_LinkAccountCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16
+            val result = EosResult.fromValue(data.getInt32(0))
+            val localUserId = ProductUserId(data.getInt64(16))
             future.complete(LoginResult(result, localUserId, ContinuanceToken(0L)))
         }
         val handle = CallbackStubs.register(invoker)
@@ -165,8 +169,8 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Connect_LinkAccount",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -174,15 +178,16 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
 
     public fun createDeviceId(): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
-        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(8))) }
+        // EOS_Connect_CreateDeviceIdCallbackInfo: ResultCode@0
+        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
         val handle = CallbackStubs.register(invoker)
         val options = ConnectCreateDeviceIdOptions()
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Connect_CreateDeviceId",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -190,15 +195,16 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
 
     public fun deleteDeviceId(): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
-        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(8))) }
+        // EOS_Connect_DeleteDeviceIdCallbackInfo: ResultCode@0
+        val invoker = EosCallback { data -> future.complete(EosResult.fromValue(data.getInt32(0))) }
         val handle = CallbackStubs.register(invoker)
         val options = ConnectDeleteDeviceIdOptions()
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_Connect_DeleteDeviceId",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -230,9 +236,10 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
 
     public fun addNotifyLoginStatusChanged(callback: (LoginStatusChangedInfo) -> Unit): NotificationHandle {
         val invoker = EosCallback { data ->
-            val localUserId = ProductUserId(data.getInt64(16))
-            val prev = EosLoginStatus.fromValue(data.getInt32(24))
-            val curr = EosLoginStatus.fromValue(data.getInt32(28))
+            // EOS_Connect_LoginStatusChangedCallbackInfo: ClientData@0, LocalUserId@8, PreviousStatus@16, CurrentStatus@20
+            val localUserId = ProductUserId(data.getInt64(8))
+            val prev = EosLoginStatus.fromValue(data.getInt32(16))
+            val curr = EosLoginStatus.fromValue(data.getInt32(20))
             callback(LoginStatusChangedInfo(localUserId, prev, curr))
         }
         val handle = CallbackStubs.register(invoker)
@@ -241,8 +248,8 @@ public class EosConnect internal constructor(private val platform: EosPlatform) 
             val seg = options.writeTo(arena)
             Native.invoke(
                 "EOS_Connect_AddNotifyLoginStatusChanged",
-                listOf(handle(), seg, handle.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
+                listOf(handle(), seg, MemorySegment.NULL, handle.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS),
                 ValueLayout.JAVA_LONG,
             ) as Long
         }

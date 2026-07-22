@@ -63,16 +63,17 @@ public class EosUserInfo internal constructor(private val platform: EosPlatform)
 
     public fun queryUserInfo(localUserId: EpicAccountId, targetUserId: EpicAccountId): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_UserInfo_QueryUserInfoCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = UserInfoQueryUserInfoOptions(localUserId, targetUserId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_UserInfo_QueryUserInfo",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -80,16 +81,17 @@ public class EosUserInfo internal constructor(private val platform: EosPlatform)
 
     public fun queryUserInfoByDisplayName(localUserId: EpicAccountId, displayName: String): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_UserInfo_QueryUserInfoByDisplayNameCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, TargetUserId@24, DisplayName@32
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = UserInfoQueryUserInfoByDisplayNameOptions(localUserId, displayName)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_UserInfo_QueryUserInfoByDisplayName",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
@@ -101,27 +103,49 @@ public class EosUserInfo internal constructor(private val platform: EosPlatform)
         externalAccountId: String,
     ): CompletableFuture<EosResult> {
         val future = CompletableFuture<EosResult>()
+        // EOS_UserInfo_QueryUserInfoByExternalAccountCallbackInfo: ResultCode@0, ClientData@8, LocalUserId@16, ExternalAccountId@24, AccountType@32, TargetUserId@40
         val stub = CallbackStubs.register(EosCallback { data ->
-            future.complete(EosResult.fromValue(data.getInt32(8)))
+            future.complete(EosResult.fromValue(data.getInt32(0)))
         })
         val options = UserInfoQueryUserInfoByExternalAccountOptions(localUserId, externalAccountType, externalAccountId)
         withCallArena { arena ->
             val seg = options.writeTo(arena)
             Native.invokeVoid(
                 "EOS_UserInfo_QueryUserInfoByExternalAccount",
-                listOf(handle(), seg, stub.segment),
-                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
+                listOf(handle(), seg, MemorySegment.NULL, stub.segment),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS)
             )
         }
         return future
     }
 
-    public fun getLocalPlatformType(): EosOnlinePlatform {
-        val fn = Native.downcall(
-            "EOS_UserInfo_GetLocalPlatformType",
-            FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG)
+    public fun getLocalPlatformType(): EosOnlinePlatform = withCallArena { arena ->
+        val options = UserInfoGetLocalPlatformTypeOptions()
+        EosOnlinePlatform.fromValue(
+            Native.invoke(
+                "EOS_UserInfo_GetLocalPlatformType",
+                listOf(handle(), options.writeTo(arena)),
+                listOf(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS),
+                ValueLayout.JAVA_INT,
+            ) as Int
         )
-        return EosOnlinePlatform.fromValue(fn.invokeExact(handle()) as Int)
+    }
+}
+
+/** `EOS_UserInfo_GetLocalPlatformTypeOptions`: ApiVersion@0. */
+internal class UserInfoGetLocalPlatformTypeOptions : StructWriter {
+    override fun writeTo(arena: Arena): MemorySegment {
+        val seg = arena.allocate(LAYOUT)
+        seg.setInt32(0, API_LATEST)
+        return seg
+    }
+
+    companion object {
+        // EOS_USERINFO_GETLOCALPLATFORMTYPE_API_LATEST
+        const val API_LATEST = 1
+        val LAYOUT: MemoryLayout = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT, MemoryLayout.paddingLayout(4),
+        )
     }
 }
 
