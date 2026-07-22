@@ -15,59 +15,55 @@
  */
 package gg.sona.eos.internal
 
-import java.lang.foreign.Arena
-import java.lang.foreign.FunctionDescriptor
-import java.lang.foreign.Linker
-import java.lang.foreign.MemoryLayout
-import java.lang.foreign.MemorySegment
-import java.lang.foreign.SymbolLookup
-import java.lang.foreign.ValueLayout
+import java.lang.foreign.*
 import java.lang.invoke.MethodHandle
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Low-level FFM bindings for the EOS SDK shared library.
  *
- * The shared library is loaded once at class initialization. The C ABI is
- * little-endian and 64-bit; EOS uses the platform default calling convention.
+ * The shared library is loaded once at class initialization. Linked downcall
+ * handles are cached per (symbol, descriptor): linking a handle is the
+ * expensive part of a native call, so each symbol is resolved and linked at
+ * most once and every subsequent call is a plain [MethodHandle] invoke.
+ *
+ * The C ABI is little-endian and 64-bit; EOS uses the platform default calling
+ * convention.
+ *
+ * @author Luna
  */
 internal object Native {
     val linker: Linker = Linker.nativeLinker()
     private val lookup: SymbolLookup
 
     // Declared above the init block on purpose: object properties initialize in declaration order,
-    // and the block below extracts the shared library through them.
-    private val extracted = java.util.concurrent.ConcurrentHashMap<String, String>()
+    // and the block below loads the library through these fields.
+    private val handles = ConcurrentHashMap<HandleKey, MethodHandle>()
+    private val extracted = ConcurrentHashMap<String, String>()
 
     @Volatile
     private var tempDir: Path? = null
 
     init {
-        val candidates = listOf("EOSSDK", "EOSSDK-Win64-Shipping", "EOSSDK-Mac-Shipping", "EOSSDK-Linux-Shipping")
-        var resolved: SymbolLookup? = null
-        for (name in candidates) {
-            try {
-                System.loadLibrary(name)
-                resolved = linker.defaultLookup()
-                break
-            } catch (_: UnsatisfiedLinkError) {
-                // try next
-            }
-        }
-        if (resolved == null) {
-            extractBundledLibrary()
-            resolved = SymbolLookup.loaderLookup()
-        }
-        lookup = resolved
+        lookup = loadNativeLibrary()
     }
 
-    fun downcall(name: String, descriptor: FunctionDescriptor): MethodHandle {
-        val addr = lookup.find(name)
-            .orElseThrow { UnsatisfiedLinkError("EOS symbol $name not found in shared library") }
-        return linker.downcallHandle(addr, descriptor)
-    }
+    private data class HandleKey(val symbol: String, val descriptor: FunctionDescriptor)
+
+    /**
+     * Returns a cached downcall handle for [name] with the given [descriptor].
+     * Symbol resolution and linking happen once per distinct (symbol, descriptor);
+     * repeat calls hit the cache.
+     */
+    fun downcall(name: String, descriptor: FunctionDescriptor): MethodHandle =
+        handles.computeIfAbsent(HandleKey(name, descriptor)) { key ->
+            val addr = lookup.find(key.symbol)
+                .orElseThrow { UnsatisfiedLinkError("EOS symbol ${key.symbol} not found in shared library") }
+            linker.downcallHandle(addr, key.descriptor)
+        }
 
     fun <T> invoke(name: String, descriptor: FunctionDescriptor, vararg args: Any?): T {
         @Suppress("UNCHECKED_CAST")
@@ -76,20 +72,18 @@ internal object Native {
 
     /** Invoke a void-returning downcall. */
     fun invokeVoid(name: String, args: List<Any?>, argLayouts: List<MemoryLayout>) {
-        val layoutArray = argLayouts.toTypedArray()
-        val descriptor = if (layoutArray.isEmpty()) {
+        val descriptor = if (argLayouts.isEmpty()) {
             FunctionDescriptor.ofVoid()
         } else {
-            FunctionDescriptor.ofVoid(*layoutArray)
+            FunctionDescriptor.ofVoid(*argLayouts.toTypedArray())
         }
-        downcall(name, descriptor).invokeWithArguments(*args.toTypedArray())
+        downcall(name, descriptor).invokeWithArguments(args)
     }
 
     /** Invoke a value-returning downcall. */
     fun invoke(name: String, args: List<Any?>, argLayouts: List<MemoryLayout>, returnLayout: ValueLayout): Any? {
-        val layoutArray = argLayouts.toTypedArray()
-        val descriptor = FunctionDescriptor.of(returnLayout, *layoutArray)
-        return downcall(name, descriptor).invokeWithArguments(*args.toTypedArray())
+        val descriptor = FunctionDescriptor.of(returnLayout, *argLayouts.toTypedArray())
+        return downcall(name, descriptor).invokeWithArguments(args)
     }
 
     fun version(): String {
@@ -121,6 +115,46 @@ internal object Native {
         }
     }
 
+    private fun loadNativeLibrary(): SymbolLookup {
+        // Prefer a system-installed SDK, then fall back to the platform native bundled in resources.
+        val installed = listOf("EOSSDK", "EOSSDK-Win64-Shipping", "EOSSDK-Mac-Shipping", "EOSSDK-Linux-Shipping")
+        for (name in installed) {
+            try {
+                System.loadLibrary(name)
+                // loaderLookup (not defaultLookup) is the one that sees libraries loaded via
+                // System.loadLibrary/System.load; defaultLookup only covers the linker's system set.
+                return SymbolLookup.loaderLookup()
+            } catch (_: UnsatisfiedLinkError) {
+                // try next
+            }
+        }
+        extractBundledLibrary()
+        return SymbolLookup.loaderLookup()
+    }
+
+    private fun extractBundledLibrary() {
+        val name = bundledLibraryName()
+        val stream = Native::class.java.classLoader.getResourceAsStream("natives/$name")
+            ?: error("No bundled EOS native library '$name' found in resources/natives")
+
+        val target: Path = tempDir().resolve(name)
+        stream.use { Files.copy(it, target, StandardCopyOption.REPLACE_EXISTING) }
+
+        val path = target.toAbsolutePath().toString()
+        extracted[name] = path
+        System.load(path)
+    }
+
+    /** The bundled native library filename for the current OS. */
+    private fun bundledLibraryName(): String {
+        val os = System.getProperty("os.name").lowercase()
+        return when {
+            os.contains("win") -> "EOSSDK-Win64-Shipping.dll"
+            os.contains("mac") || os.contains("darwin") -> "libEOSSDK-Mac-Shipping.dylib"
+            else -> "libEOSSDK-Linux-Shipping.so"
+        }
+    }
+
     private fun tempDir(): Path {
         tempDir?.let { return it }
 
@@ -139,32 +173,6 @@ internal object Native {
             tempDir = dir
             return dir
         }
-    }
-
-    private fun extractBundledLibrary() {
-        val candidates = listOf(
-            "EOSSDK-Win64-Shipping.dll",
-            "libEOSSDK-Linux-Shipping.so",
-            "libEOSSDK-Mac-Shipping.dylib",
-        )
-        var chosen: String? = null
-        var stream: java.io.InputStream? = null
-        for (name in candidates) {
-            val s = Native::class.java.classLoader.getResourceAsStream("natives/$name")
-            if (s != null) {
-                chosen = name
-                stream = s
-                break
-            }
-        }
-        if (chosen == null || stream == null) {
-            error("No bundled EOS native library found in resources/natives")
-        }
-        val target: Path = tempDir().resolve(chosen)
-        Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING)
-        stream.close()
-        extracted[chosen] = target.toAbsolutePath().toString()
-        System.load(target.toAbsolutePath().toString())
     }
 }
 
@@ -192,14 +200,8 @@ internal inline fun <T> withStruct(value: StructWriter, block: (MemorySegment, A
 }
 
 /** Allocates a null-terminated UTF-8 string in the arena, or [MemorySegment.NULL] if [value] is null. */
-fun Arena.allocCString(value: String?): MemorySegment {
-    if (value == null) return MemorySegment.NULL
-    val bytes = value.toByteArray(Charsets.UTF_8)
-    val seg = allocate(bytes.size + 1L, 1)
-    seg.copyFrom(MemorySegment.ofArray(bytes))
-    seg.set(ValueLayout.JAVA_BYTE, bytes.size.toLong(), 0)
-    return seg
-}
+fun Arena.allocCString(value: String?): MemorySegment =
+    if (value == null) MemorySegment.NULL else allocateFrom(value)
 
 /** Allocates a UTF-8 string array in the arena; null entries become [MemorySegment.NULL]. */
 fun Arena.allocCStringArray(values: List<String?>): MemorySegment {
@@ -229,12 +231,8 @@ fun MemorySegment.getCStringAt(offset: Long): String? {
 /** Reads a fixed-size byte array (e.g. SocketName[33]) as a UTF-8 string up to the first NUL. */
 fun MemorySegment.getFixedCString(offset: Long, maxBytes: Int): String {
     val bytes = ByteArray(maxBytes)
-    for (i in 0 until maxBytes) {
-        val b = get(ValueLayout.JAVA_BYTE, offset + i)
-        if (b == 0.toByte()) {
-            return String(bytes, 0, i, Charsets.UTF_8)
-        }
-        bytes[i] = b
-    }
-    return String(bytes, Charsets.UTF_8)
+    MemorySegment.copy(this, ValueLayout.JAVA_BYTE, offset, bytes, 0, maxBytes)
+    val nul = bytes.indexOf(0.toByte())
+    val len = if (nul < 0) maxBytes else nul
+    return String(bytes, 0, len, Charsets.UTF_8)
 }
