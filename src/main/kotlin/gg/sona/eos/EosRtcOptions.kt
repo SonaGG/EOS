@@ -15,7 +15,7 @@ class EosRtcOptions : StructWriter {
      *
      * Windows refuses to create a platform with RTC enabled unless this is supplied, and the
      * failure surfaces as a null handle out of `EOS_Platform_Create` rather than an error code.
-     * Defaults to a copy downloaded and cached from [gg.sona.eos.EosNatives.baseUrl], so it only
+     * Defaults to the copy bundled by the embedding application under `natives/`, so it only
      * needs setting to override that.
      */
     var xAudio29DllPath: String? = null
@@ -32,7 +32,7 @@ class EosRtcOptions : StructWriter {
     private fun windowsOptions(arena: Arena): MemorySegment? {
         if (!IS_WINDOWS) return null
 
-        val path = xAudio29DllPath ?: Native.nativeFilePath(XAUDIO_DLL)
+        val path = xAudio29DllPath ?: Native.extractBundledFile(XAUDIO_DLL) ?: return null
 
         val seg = arena.allocate(WINDOWS_LAYOUT)
         seg.setInt32(0, WINDOWS_API_LATEST)

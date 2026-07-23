@@ -157,27 +157,17 @@ comply with Epic's terms. See [NOTICE](NOTICE).
 The shared library is loaded automatically from one of:
 
 1. `System.loadLibrary("EOSSDK")` — if installed system-wide.
-2. Downloaded at runtime from a URL you configure, then cached on disk and
-   reused on subsequent runs. **No download URL is shipped by default.**
+2. A classpath resource at `natives/<name>` — extracted to a temp file at
+   startup. This is expected to come from the **application** that embeds
+   this library, not from this library's own jar: place the appropriate
+   binary under your app's own `src/main/resources/natives/` (or any other
+   classpath source) for your target platform (`EOSSDK-Win64-Shipping.dll`,
+   `libEOSSDK-Linux-Shipping.so`, or `libEOSSDK-Mac-Shipping.dylib`).
 
-To use the download path, point the loader at a location you are licensed to
-fetch the binaries from, before your first EOS call:
-
-```kotlin
-import gg.sona.eos.EosNatives
-
-EosNatives.baseUrl = "https://your-host.example.com/eos"
-```
-
-Or without code changes, via the `eos.natives.baseUrl` system property or the
-`EOS_NATIVES_BASE_URL` environment variable.
-
-Files are fetched from `"$baseUrl/<name>"`, where `<name>` is the platform
-binary (`EOSSDK-Win64-Shipping.dll`, `libEOSSDK-Linux-Shipping.so`, or
-`libEOSSDK-Mac-Shipping.dylib`) and, when RTC is enabled on Windows,
-`xaudio2_9redist.dll`. Downloads are cached under
-`$user.home/.cache/eos-natives` by default; override with `EosNatives.cacheDir`
-or the `eos.natives.cacheDir` system property.
+When RTC is enabled on Windows, `xaudio2_9redist.dll` is loaded the same way
+— bundle it alongside the platform binary under `natives/` in your app's
+resources, or set `EosRtcOptions.xAudio29DllPath` to an absolute path
+yourself.
 
 ---
 

@@ -16,12 +16,12 @@ This project does NOT distribute, bundle, or redistribute any EOS SDK binary
 (EOSSDK-Win64-Shipping.dll, libEOSSDK-Linux-Shipping.so,
 libEOSSDK-Mac-Shipping.dylib, xaudio2_9redist.dll, or any other EOS SDK file).
 
-No download source for these binaries is configured or provided by default. To
-use this library you must:
+No copy of these binaries is configured or provided by default. To use this
+library you must:
 
   1. Obtain the EOS SDK directly from Epic Games under Epic's terms, and
-  2. Configure a location you are licensed to fetch the binaries from
-     (see EosNatives.baseUrl in the documentation).
+  2. Bundle the binaries yourself as classpath resources under `natives/`
+     in your own application (see README.md).
 
 You are solely responsible for complying with Epic Games' license terms when
 obtaining, hosting, downloading, and using the EOS SDK. Nothing in this project
